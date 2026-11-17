@@ -5,6 +5,7 @@ Personal portfolio of Avraham Arazi. Static site: plain HTML, CSS and one small 
 - `DESIGN.md` is the design system. Every page follows it; use the tokens in `css/site.css`, never raw values.
 - `index.html` home, `resume/index.html` resume (`resume/Avraham-Arazi-CV.pdf` is generated from it: headless Chrome `--print-to-pdf --no-pdf-header-footer`; regenerate after editing the resume).
 - Live numbers come from the homelab dashboard's public routes (`/api/stats`, `/api/uptime`, `/api/history`) on the same host. The base path is the `api-base` meta tag in `index.html`. A tile with no data is hidden, never faked.
+- Hebrew: `he/index.html` and `he/resume/index.html` (`lang=he dir=rtl`), PDF `he/resume/Avraham-Arazi-CV-he.pdf` (same Chrome command as the English one, run against `he/resume/`). `js/site.js` switches its labels on `<html lang>`. Every page has an EN / עב switch in `.nav-end`.
 - Fonts: IBM Plex (SIL OFL, see `fonts/LICENSE.txt`), Latin subset, self-hosted.
 
 ## Run locally
@@ -17,4 +18,4 @@ Served by nginx on the homelab at `/portfolio/` (see homelab-ops). Run `.\deploy
 
 ## Not built yet
 
-Hebrew pages (`/he/`), the headshot, the yeshiva site entry, the `/playground` scene.
+the headshot, the yeshiva site entry, the `/playground` scene.

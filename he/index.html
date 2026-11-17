@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="he" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>אברהם ארזי · מפתח Full-Stack</title>
+<meta name="description" content="אברהם ארזי, מפתח Full-Stack שבונה אפליקציות ווב ומריץ את השרתים שהן חיות עליהם. פרויקטים, נתוני Homelab חיים וקורות חיים.">
+<meta name="api-base" content="/">
+<meta name="theme-color" content="#10121b">
+<script>(function(){var d=document.documentElement,t;try{t=localStorage.getItem('theme')}catch(e){}if(!t)t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';d.dataset.theme=t;d.classList.add('js')})()</script>
+<link rel="preload" href="../fonts/IBMPlexSansHebrew-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/FrankRuhlLibre-Medium.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../css/site.css">
+<link rel="alternate" hreflang="en" href="../">
+<link rel="alternate" hreflang="he" href="./">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">דלג לתוכן</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></symbol>
+  <symbol id="i-out" viewBox="0 0 16 16"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3 7 9"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7z"/></symbol>
+  <symbol id="i-server" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="4.5" rx="1"/><rect x="2" y="9" width="12" height="4.5" rx="1"/><path d="M4.5 4.75h.01M4.5 11.25h.01"/></symbol>
+  <symbol id="i-work" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="8.5" rx="1.5"/><path d="M6 5V3.5A1 1 0 0 1 7 2.5h2a1 1 0 0 1 1 1V5M2 9h12"/></symbol>
+  <symbol id="i-file" viewBox="0 0 16 16"><path d="M9.5 2H4.5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5zM9.5 2v3h3M6 8.5h4M6 11h4"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 5 5.5 4 5.5-4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 16 16"><rect x="4.5" y="1.5" width="7" height="13" rx="1.5"/><path d="M7.5 12h1"/></symbol>
+  <symbol id="i-code" viewBox="0 0 16 16"><path d="m5.5 4.5-3.5 3.5 3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 16 16"><path d="M8 11 5 8c.8-2.8 2.8-5.2 7-6 -.8 4.2-3.2 6.2-4 9zM5 8H2.500l2-2.500M8 11v2.500l2.5-2M3.5 12.500l-1 1"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></symbol>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="אברהם ארזי, דף הבית"><span class="mono-tile" aria-hidden="true">AA</span><span>אברהם ארזי</span></a>
+    <nav class="nav-links" aria-label="ראשי">
+      <a href="#homelab">Homelab</a>
+      <a href="#work">עבודות</a>
+      <a href="#contact">יצירת קשר</a>
+    </nav>
+    <div class="nav-end">
+      <div class="lang" role="group" aria-label="שפה"><a href="../" lang="en" hreflang="en">EN</a><a href="./" lang="he" hreflang="he" aria-current="true">עב</a></div>
+      <button class="btn btn-icon theme" type="button" aria-label="החלפה בין מצב כהה למצב בהיר"><svg class="icon i-moon"><use href="#i-moon"/></svg><svg class="icon i-sun"><use href="#i-sun"/></svg></button>
+      <a class="btn" href="resume/">קורות חיים</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="sky">
+      <svg class="sky-art" viewBox="0 0 1440 860" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky-g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" class="sky-top"/><stop offset=".58" class="sky-mid"/><stop offset=".92" class="sky-low"/></linearGradient>
+          <radialGradient id="glow-g" cx=".5" cy=".5" r=".5"><stop offset="0" class="sky-glow-a"/><stop offset="1" class="sky-glow-b"/></radialGradient>
+          <pattern id="dots-p" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1"/></pattern>
+          <linearGradient id="fade-g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          <mask id="fade-m"><rect width="1440" height="860" fill="url(#fade-g)"/></mask>
+        </defs>
+        <rect width="1440" height="860" fill="url(#sky-g)"/>
+        <ellipse cx="720" cy="810" rx="820" ry="250" fill="url(#glow-g)"/>
+        <rect class="sky-dots" width="1440" height="860" fill="url(#dots-p)" mask="url(#fade-m)"/>
+        <g class="sky-stars"><circle cx="1336" cy="180" r="0.8" opacity="0.7"/><circle cx="410" cy="16" r="0.8" opacity="0.7"/><circle cx="525" cy="123" r="0.8" opacity="0.5"/><circle cx="515" cy="489" r="0.8" opacity="0.35"/><circle cx="1313" cy="237" r="0.6" opacity="0.9"/><circle cx="863" cy="354" r="1.3" opacity="0.9"/><circle cx="724" cy="8" r="1.3" opacity="0.9"/><circle cx="526" cy="31" r="0.8" opacity="0.5"/><circle cx="1081" cy="32" r="0.8" opacity="0.7"/><circle cx="84" cy="380" r="1" opacity="0.35"/><circle cx="356" cy="169" r="0.6" opacity="0.7"/><circle cx="1114" cy="565" r="0.6" opacity="0.35"/><circle cx="933" cy="384" r="0.8" opacity="0.9"/><circle cx="141" cy="93" r="0.8" opacity="0.9"/><circle cx="730" cy="8" r="0.6" opacity="0.7"/><circle cx="371" cy="182" r="1" opacity="0.35"/><circle cx="1067" cy="68" r="0.6" opacity="0.9"/><circle cx="1146" cy="20" r="0.8" opacity="0.35"/><circle cx="813" cy="109" r="0.6" opacity="0.7"/><circle cx="528" cy="396" r="1.3" opacity="0.35"/><circle cx="622" cy="167" r="0.8" opacity="0.35"/><circle cx="1207" cy="9" r="0.8" opacity="0.5"/><circle cx="986" cy="225" r="1.3" opacity="0.35"/><circle cx="15" cy="250" r="0.8" opacity="0.5"/><circle cx="614" cy="324" r="0.6" opacity="0.35"/><circle cx="1159" cy="149" r="1.3" opacity="0.9"/><circle cx="15" cy="44" r="0.8" opacity="0.35"/><circle cx="1279" cy="47" r="0.8" opacity="0.5"/><circle cx="682" cy="424" r="0.6" opacity="0.7"/><circle cx="94" cy="45" r="0.6" opacity="0.7"/><circle cx="484" cy="31" r="0.8" opacity="0.9"/><circle cx="217" cy="62" r="0.8" opacity="0.7"/><circle cx="70" cy="295" r="0.6" opacity="0.7"/><circle cx="1103" cy="173" r="0.8" opacity="0.7"/><circle cx="1380" cy="51" r="0.6" opacity="0.7"/><circle cx="1172" cy="318" r="0.6" opacity="0.35"/><circle cx="969" cy="260" r="1" opacity="0.35"/><circle cx="507" cy="155" r="0.8" opacity="0.35"/><circle cx="266" cy="22" r="0.6" opacity="0.7"/><circle cx="426" cy="39" r="1" opacity="0.35"/><circle cx="391" cy="516" r="0.6" opacity="0.9"/><circle cx="1240" cy="12" r="0.8" opacity="0.5"/><circle cx="201" cy="228" r="1" opacity="0.9"/><circle cx="756" cy="102" r="1" opacity="0.5"/><circle cx="810" cy="321" r="0.6" opacity="0.35"/><circle cx="724" cy="65" r="0.6" opacity="0.7"/><circle cx="786" cy="175" r="0.6" opacity="0.5"/><circle cx="1226" cy="16" r="1.3" opacity="0.35"/><circle cx="1302" cy="29" r="1" opacity="0.9"/><circle cx="1123" cy="20" r="0.6" opacity="0.5"/><circle cx="637" cy="294" r="0.8" opacity="0.7"/><circle cx="1092" cy="535" r="0.8" opacity="0.7"/><circle cx="1282" cy="560" r="0.6" opacity="0.9"/><circle cx="715" cy="118" r="0.8" opacity="0.7"/><circle cx="1006" cy="46" r="1.3" opacity="0.5"/><circle cx="1089" cy="349" r="1" opacity="0.5"/><circle cx="464" cy="345" r="0.6" opacity="0.7"/><circle cx="1424" cy="87" r="0.6" opacity="0.9"/><circle cx="1008" cy="75" r="0.8" opacity="0.35"/><circle cx="376" cy="24" r="0.8" opacity="0.35"/><circle cx="124" cy="162" r="0.6" opacity="0.7"/><circle cx="210" cy="24" r="0.6" opacity="0.7"/><circle cx="1137" cy="391" r="1" opacity="0.9"/><circle cx="1276" cy="506" r="0.8" opacity="0.35"/><circle cx="364" cy="285" r="0.8" opacity="0.35"/><circle cx="182" cy="379" r="1" opacity="0.7"/><circle cx="1411" cy="281" r="0.6" opacity="0.35"/><circle cx="474" cy="9" r="1" opacity="0.7"/><circle cx="1019" cy="107" r="0.6" opacity="0.9"/><circle cx="1299" cy="18" r="0.6" opacity="0.7"/><circle cx="584" cy="304" r="0.6" opacity="0.5"/><circle cx="1260" cy="395" r="0.6" opacity="0.5"/><circle cx="47" cy="229" r="0.8" opacity="0.35"/><circle cx="770" cy="321" r="0.6" opacity="0.9"/><circle cx="1331" cy="35" r="0.8" opacity="0.7"/><circle cx="582" cy="352" r="0.6" opacity="0.7"/><circle cx="538" cy="48" r="0.8" opacity="0.9"/><circle cx="1104" cy="30" r="0.8" opacity="0.9"/><circle cx="811" cy="440" r="1.3" opacity="0.9"/><circle cx="706" cy="155" r="0.6" opacity="0.35"/><circle cx="260" cy="32" r="1.3" opacity="0.9"/><circle cx="393" cy="378" r="0.6" opacity="0.7"/><circle cx="1013" cy="489" r="1.3" opacity="0.9"/><circle cx="687" cy="358" r="0.8" opacity="0.7"/><circle cx="199" cy="22" r="0.6" opacity="0.9"/><circle cx="346" cy="147" r="1" opacity="0.35"/><circle cx="29" cy="285" r="0.6" opacity="0.7"/><circle cx="1043" cy="334" r="0.6" opacity="0.7"/><circle cx="1383" cy="397" r="0.8" opacity="0.35"/><circle cx="1022" cy="222" r="0.8" opacity="0.9"/><circle cx="1163" cy="131" r="0.8" opacity="0.5"/><circle cx="11" cy="345" r="0.6" opacity="0.9"/><circle cx="51" cy="148" r="1.3" opacity="0.9"/><circle cx="125" cy="57" r="1.3" opacity="0.9"/><circle cx="1135" cy="11" r="1" opacity="0.7"/><circle cx="392" cy="269" r="0.6" opacity="0.5"/><circle cx="1034" cy="329" r="0.8" opacity="0.5"/><circle cx="27" cy="366" r="1" opacity="0.9"/><circle cx="1012" cy="48" r="1" opacity="0.9"/><circle cx="335" cy="53" r="0.8" opacity="0.7"/><circle cx="488" cy="551" r="0.8" opacity="0.9"/><circle cx="109" cy="185" r="0.8" opacity="0.5"/><circle cx="203" cy="89" r="1.3" opacity="0.5"/><circle cx="1430" cy="12" r="0.6" opacity="0.35"/><circle cx="758" cy="168" r="1" opacity="0.9"/><circle cx="830" cy="57" r="0.6" opacity="0.7"/><circle cx="147" cy="331" r="1.3" opacity="0.7"/><circle cx="902" cy="408" r="1.3" opacity="0.35"/><circle cx="1050" cy="559" r="1" opacity="0.9"/><circle cx="1425" cy="400" r="0.6" opacity="0.9"/></g>
+        <g class="sky-cloud cloud-far">
+          <rect x="60" y="300" width="330" height="26" rx="13"/><rect x="130" y="276" width="190" height="26" rx="13"/><rect x="20" y="324" width="230" height="22" rx="11"/>
+          <rect x="1010" y="230" width="300" height="24" rx="12"/><rect x="1090" y="208" width="170" height="24" rx="12"/><rect x="1150" y="252" width="230" height="20" rx="10"/>
+          <rect x="560" y="520" width="260" height="20" rx="10"/><rect x="620" y="502" width="140" height="20" rx="10"/>
+        </g>
+        <g class="sky-cloud cloud-near">
+          <rect x="-40" y="560" width="420" height="34" rx="17"/><rect x="40" y="530" width="250" height="32" rx="16"/><rect x="120" y="592" width="340" height="28" rx="14"/><rect x="10" y="618" width="200" height="24" rx="12"/>
+          <rect x="1030" y="600" width="450" height="34" rx="17"/><rect x="1130" y="570" width="260" height="32" rx="16"/><rect x="960" y="632" width="330" height="26" rx="13"/>
+        </g>
+        <path class="sky-ground" d="M0 812C220 786 430 826 720 804s520-24 720 6v50H0z"/>
+      </svg>
+
+      <svg class="constellation" viewBox="0 0 900 190" role="img" aria-label="המעבדה שלי כקבוצת כוכבים: האינטרנט מגיע ל-proxy, שמנתב לדשבורד, ל-CodeZi, ל-Flight Monitor, לאתרים ולחדשות; שתי אפליקציות חולקות מסד נתונים.">
+        <g id="const-g">
+          <path class="c-line" d="M820 95 450 95M450 95 400 22M450 95 250 55M450 95 270 145M450 95 610 45M450 95 650 150M250 55 90 105M270 145 90 105"/>
+          <g class="c-star" data-ct="106"><circle cx="90" cy="105" r="3"/><text x="90" y="124">database</text></g>
+          <g class="c-star" data-ct="100"><circle cx="250" cy="55" r="3"/><text x="250" y="43">codezi</text></g>
+          <g class="c-star" data-ct="103"><circle cx="270" cy="145" r="3"/><text x="270" y="164">flights</text></g>
+          <g class="c-star" data-ct="105"><circle cx="400" cy="22" r="3"/><text x="390" y="26" style="text-anchor:end">dashboard</text></g>
+          <g class="c-star proxy" data-ct="101"><circle cx="450" cy="95" r="4.5"/><text x="450" y="116">proxy</text></g>
+          <g class="c-star" data-ct="108"><circle cx="610" cy="45" r="3"/><text x="610" y="33">websites</text></g>
+          <g class="c-star" data-ct="110"><circle cx="650" cy="150" r="3"/><text x="650" y="169">news</text></g>
+          <g class="c-star ring"><circle cx="820" cy="95" r="3.5"/><text x="820" y="114">internet</text></g>
+        </g>
+      </svg>
+
+      <div class="hero-text">
+        <h1 class="display" id="hero-title">אני בונה אפליקציות Full-Stack ומתחזק את השרתים שמריצים אותן</h1>
+        <p class="lead">אני אברהם ארזי, הנדסאי תוכנה. האתר הזה וכל הפרויקטים שבו רצים משרת Proxmox שעומד אצלי בבית.</p>
+        <div class="hero-cta">
+          <a class="btn btn-lg btn-primary" href="#work">לעבודות שלי <svg class="icon flip"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-lg btn-sky" href="resume/">לקורות החיים</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="terminal" role="region" aria-label="הצצה מהירה">
+      <div class="term-bar">avraham@homelab:~</div>
+      <div class="term-body typing">
+        <p class="cmd" data-line>whoami</p>
+        <p class="out" data-line dir="rtl">אברהם ארזי. מפתח Full-Stack, הנדסאי תוכנה.</p>
+        <p class="cmd" data-line>cat looking-for.txt</p>
+        <p class="out" data-line dir="rtl">מחפש תפקיד של מהנדס תוכנה או מפתח Full-Stack.</p>
+        <p class="out" data-line dir="ltr">JavaScript, React, Node.js, Express, MongoDB, Java.</p>
+        <p class="cmd" data-line>ls projects/</p>
+        <p class="out" data-line><a href="#p-codezi">codezi/</a>  <a href="#p-flights">flight-monitor/</a>  <a href="#p-dashboard">homelab-dashboard/</a>  <a href="#p-news">news-reader/</a></p>
+        <p class="cmd" data-line><span class="cursor" aria-hidden="true"></span></p>
+      </div>
+    </div>
+  </section>
+
+  <nav class="chapterbar" aria-label="פרקים">
+    <ul>
+      <li><a href="#homelab"><svg class="icon"><use href="#i-server"/></svg>Homelab</a></li>
+      <li><a href="#work"><svg class="icon"><use href="#i-work"/></svg>עבודות</a></li>
+      <li><a href="#resume"><svg class="icon"><use href="#i-file"/></svg>קורות חיים</a></li>
+      <li><a href="#contact"><svg class="icon"><use href="#i-mail"/></svg>יצירת קשר</a></li>
+    </ul>
+  </nav>
+
+  <div class="chapters">
+    <div class="cable" aria-hidden="true"><span class="packet"></span></div>
+
+    <section class="chapter" id="homelab" aria-labelledby="homelab-title">
+      <div class="chapter-head">
+        <span class="pill pill-live"><span class="dot" data-host-dot></span>שידור חי מהשרת שלי</span>
+        <h2 id="homelab-title">מכונה אחת בבית,<br>מנוהלת כמו פרודקשן</h2>
+        <p class="lead">שרת Proxmox עם קונטיינר לכל אפליקציה, reverse proxy מלפנים, מסד נתונים משותף מאחור, ודשבורד שכתבתי כדי לנהל את כל זה. המספרים כאן אמיתיים ועדכניים.</p>
+      </div>
+
+      <div class="panel topo">
+        <svg viewBox="0 0 1000 440" role="img" aria-label="איך בקשה מגיעה לכל אפליקציה: אינטרנט, אחריו ה-proxy, אחריו קונטיינר לכל אפליקציה, עם מסד נתונים משותף.">
+          <path class="edge live" d="M158 220H232"/>
+          <path class="edge live" d="M368 220C440 220 430 60 492 60"/>
+          <path class="edge live" d="M368 220C440 220 430 140 492 140"/>
+          <path class="edge live" d="M368 220H492"/>
+          <path class="edge live" d="M368 220C440 220 430 300 492 300"/>
+          <path class="edge live" d="M368 220C440 220 430 380 492 380"/>
+          <path class="edge" d="M628 140C700 140 700 180 762 180"/>
+          <path class="edge" d="M628 220C700 220 700 180 762 180"/>
+          <text class="edge-label" x="195" y="208">https</text>
+          <text class="edge-label" x="724" y="146">mongo</text>
+          <g class="node" transform="translate(90 220)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5" style="fill:var(--data-2)"/><text class="n-name" x="-38" y="-2">internet</text><text class="n-sub" x="-38" y="13">via funnel</text></g>
+          <g class="node proxy" data-ct="101" transform="translate(300 220)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5"/><text class="n-name" x="-38" y="-2">proxy</text><text class="n-sub" x="-38" y="13">nginx + funnel</text></g>
+          <g class="node" data-ct="105" transform="translate(560 60)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5"/><text class="n-name" x="-38" y="-2">dashboard</text><text class="n-sub" x="-38" y="13">react · node</text></g>
+          <g class="node" data-ct="100" transform="translate(560 140)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5"/><text class="n-name" x="-38" y="-2">codezi</text><text class="n-sub" x="-38" y="13">react · node 22</text></g>
+          <g class="node" data-ct="103" transform="translate(560 220)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5"/><text class="n-name" x="-38" y="-2">flights</text><text class="n-sub" x="-38" y="13">react · express</text></g>
+          <g class="node" data-ct="108" transform="translate(560 300)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5"/><text class="n-name" x="-38" y="-2">websites</text><text class="n-sub" x="-38" y="13">wordpress</text></g>
+          <g class="node" data-ct="110" transform="translate(560 380)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5"/><text class="n-name" x="-38" y="-2">news</text><text class="n-sub" x="-38" y="13">node · rss</text></g>
+          <g class="node" data-ct="106" transform="translate(830 180)"><rect x="-68" y="-24" width="136" height="48" rx="12"/><circle class="led" cx="-52" cy="0" r="4.5"/><text class="n-name" x="-38" y="-2">database</text><text class="n-sub" x="-38" y="13">mongodb 7</text></g>
+        </svg>
+      </div>
+
+      <div class="wall">
+        <article class="card chart" data-chart="cpu"><div class="card-head"><h3>מעבד</h3><span class="label" data-note>24 שעות אחרונות</span></div><div data-plot><p class="empty">טוען נתונים חיים…</p></div></article>
+        <article class="card chart" data-chart="mem"><div class="card-head"><h3>זיכרון</h3><span class="label" data-note>24 שעות אחרונות</span></div><div data-plot><p class="empty">טוען נתונים חיים…</p></div></article>
+        <article class="card chart" data-chart="net"><div class="card-head"><h3>רשת</h3><span class="label" data-note>24 שעות אחרונות</span></div><div data-plot><p class="empty">טוען נתונים חיים…</p></div></article>
+        <article class="card span-2"><div class="card-head"><h3>זמינות</h3><span class="label">7 ימים אחרונים</span></div><div data-uptime><p class="empty">טוען נתונים חיים…</p></div></article>
+        <article class="card readout"><div class="card-head"><h3>ברגע זה</h3><span class="label ltr" data-at></span></div><div data-readout><p class="empty">טוען נתונים חיים…</p></div></article>
+      </div>
+
+      <ul class="facts">
+        <li><svg class="icon icon-lg"><use href="#i-server"/></svg><h3>קונטיינר לכל אפליקציה</h3><p>תריסר קונטיינרי LXC על שרת Proxmox אחד עם 16GB זיכרון, לכל אחד תפקיד וכתובת סטטית משלו.</p></li>
+        <li><svg class="icon icon-lg"><use href="#i-rocket"/></svg><h3>פוש, ופריסה אוטומטית</h3><p>GitHub Actions עם runners עצמאיים בתוך הקונטיינרים. פוש ל-main מעלה את האפליקציה לאוויר.</p></li>
+        <li><svg class="icon icon-lg"><use href="#i-eye"/></svg><h3>תמיד תחת מעקב</h3><p>כל אתר נבדק אחת לדקה, תקלה שולחת התראה לטלפון שלי, ולפני כל שינוי נלקח snapshot של הקונטיינר.</p></li>
+      </ul>
+    </section>
+
+    <section class="chapter" id="work" aria-labelledby="work-title">
+      <div class="chapter-head">
+        <span class="pill">עבודות</span>
+        <h2 id="work-title">דברים שבניתי<br>ורצים גם היום</h2>
+        <p class="lead">כל אחד מהם חי על השרת שלמעלה. תפתחו, תנסו לשבור, תקראו את הקוד.</p>
+      </div>
+
+      <article class="project" id="p-codezi">
+        <a class="shot" href="https://central-proxy.bluebuck-tailor.ts.net/codezi/"><img src="../img/codezi.jpg" width="800" height="500" loading="lazy" alt="מסך הבית של CodeZi"></a>
+        <div class="project-text">
+          <span class="pill"><span class="dot" data-site="codezi"></span>אפליקציית Real-time</span>
+          <h2>CodeZi</h2>
+          <p class="lead">פוקר מרובה משתתפים, משחקים וטבלאות דירוג בדפדפן, מסונכרנים בין השחקנים בזמן אמת דרך WebSockets.</p>
+          <ul class="tags"><li class="tag">React</li><li class="tag">Node.js</li><li class="tag">Socket.io</li><li class="tag">MongoDB</li><li class="tag">Docker</li></ul>
+          <div class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/codezi/">לאתר החי <svg class="icon flip"><use href="#i-arrow"/></svg></a><a class="quiet" href="https://github.com/lakylaky963/CodeZi-Homelab">קוד <svg class="icon"><use href="#i-out"/></svg></a></div>
+        </div>
+      </article>
+      <article class="project" id="p-flights">
+        <a class="shot" href="https://central-proxy.bluebuck-tailor.ts.net/docker-avi/"><img src="../img/flights.jpg" width="800" height="500" loading="lazy" alt="Flight Monitor מציג ערכי גובה, כיוון ויציבות"></a>
+        <div class="project-text">
+          <span class="pill"><span class="dot" data-site="flights"></span>אפליקציית Full-Stack</span>
+          <h2>Flight Monitor</h2>
+          <p class="lead">לוח מחוונים לנתוני טיסה: גובה, כיוון ויציבות, עם תצוגת טקסט ותצוגה ויזואלית. צד לקוח ב-React, API ב-Express, ומוגש כקונטיינרי Docker.</p>
+          <ul class="tags"><li class="tag">React</li><li class="tag">Express</li><li class="tag">MongoDB</li><li class="tag">Docker</li></ul>
+          <div class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/docker-avi/">לאתר החי <svg class="icon flip"><use href="#i-arrow"/></svg></a><a class="quiet" href="https://github.com/home-lab-TH/shachar_b_avi">קוד <svg class="icon"><use href="#i-out"/></svg></a></div>
+        </div>
+      </article>
+      <article class="project" id="p-dashboard">
+        <a class="shot" href="https://central-proxy.bluebuck-tailor.ts.net/"><img src="../img/dashboard.jpg" width="800" height="500" loading="lazy" alt="דשבורד ה-Homelab עם גרפים חיים של מעבד, זיכרון, רשת ודיסק"></a>
+        <div class="project-text">
+          <span class="pill"><span class="dot" data-site="dashboard"></span>לוח בקרה</span>
+          <h2>דשבורד ה-Homelab</h2>
+          <p class="lead">לוח הבקרה שכתבתי לשרת: גרפים חיים מה-API של Proxmox, מפת טופולוגיה, בדיקות תקינות, הקמת אתרים בלחיצה ועדכונים.</p>
+          <ul class="tags"><li class="tag">React</li><li class="tag">Vite</li><li class="tag">Node.js</li><li class="tag">Proxmox API</li></ul>
+          <div class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/">לאתר החי <svg class="icon flip"><use href="#i-arrow"/></svg></a><a class="quiet" href="https://github.com/home-lab-TH/landingPage">קוד <svg class="icon"><use href="#i-out"/></svg></a></div>
+        </div>
+      </article>
+      <article class="project" id="p-news">
+        <a class="shot" href="https://central-proxy.bluebuck-tailor.ts.net/news/"><img src="../img/news.jpg" width="800" height="500" loading="lazy" alt="קורא החדשות מציג רשימת כותרות מדורגת עם לייק ודיסלייק"></a>
+        <div class="project-text">
+          <span class="pill"><span class="dot" data-site="route:news"></span>קורא RSS</span>
+          <h2>קורא חדשות</h2>
+          <p class="lead">שואב תריסר פידים ולומד מה מעניין אותי לפי לייק או דיסלייק, ואז מדרג לשונית "בשבילך".</p>
+          <ul class="tags"><li class="tag">Node.js</li><li class="tag">MongoDB</li><li class="tag">pm2</li></ul>
+          <div class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/news/">לאתר החי <svg class="icon flip"><use href="#i-arrow"/></svg></a></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="chapter" id="resume" aria-labelledby="resume-title">
+      <div class="chapter-head">
+        <span class="pill">קורות חיים</span>
+        <h2 id="resume-title">Full-Stack, מהממשק<br>ועד מסד הנתונים</h2>
+      </div>
+      <div class="two">
+        <div>
+          <p class="lead">מפתח Full-Stack שבונה אתרים שלמים, מצד הלקוח דרך השרת ועד מסד הנתונים. חשובה לי לוגיקה נקייה, וגם האבטחה והפריסה של המערכת.</p>
+          <ul class="tags"><li class="tag">JavaScript</li><li class="tag">Java</li><li class="tag">React</li><li class="tag">Node.js</li><li class="tag">Express</li><li class="tag">HTML</li><li class="tag">CSS</li><li class="tag">MongoDB</li></ul>
+          <a class="btn" href="resume/">לקורות החיים המלאים <svg class="icon flip"><use href="#i-arrow"/></svg></a>
+        </div>
+        <dl class="kv">
+          <div><dt class="label">השכלה</dt><dd>הנדסאי תוכנה, אורט רחובות. בשלבים האחרונים של הלימודים; בעל תעודת טכנאי תוכנה ממה"ט.</dd></div>
+          <div><dt class="label">ניסיון</dt><dd>מפתח Full-Stack עצמאי. שלוש שנים בצוות ההוראה בעיריית רחובות.</dd></div>
+          <div><dt class="label">מגורים</dt><dd>ראשון לציון</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="chapter" id="contact" aria-labelledby="contact-title">
+      <div class="chapter-head">
+        <span class="pill">יצירת קשר</span>
+        <h2 id="contact-title">מחפשים מהנדס תוכנה?<br>בואו נדבר.</h2>
+      </div>
+        <div class="contact-list ltr">
+          <a href="mailto:liquidbrain27@gmail.com"><svg class="icon"><use href="#i-mail"/></svg>liquidbrain27@gmail.com<svg class="icon go"><use href="#i-arrow"/></svg></a>
+          <a href="tel:+972536217719"><svg class="icon"><use href="#i-phone"/></svg>053-6217719<svg class="icon go"><use href="#i-arrow"/></svg></a>
+          <a href="https://github.com/lakylaky963"><svg class="icon"><use href="#i-code"/></svg>github.com/lakylaky963<svg class="icon go"><use href="#i-out"/></svg></a>
+        </div>
+    </section>
+  </div>
+</main>
+
+<footer class="footer">
+  <svg class="constellation" viewBox="0 0 900 190" aria-hidden="true"><use href="#const-g"/></svg>
+  <p class="wordmark" aria-hidden="true">אברהם ארזי</p>
+  <p class="footer-row"><a class="ltr" href="mailto:liquidbrain27@gmail.com">liquidbrain27@gmail.com</a><a href="https://github.com/lakylaky963">GitHub</a><a href="resume/">קורות חיים</a><span>מוגש מה-Homelab שלי<span data-foot-uptime></span></span></p>
+</footer>
+
+<script src="../js/site.js" defer></script>
+</body>
+</html>
