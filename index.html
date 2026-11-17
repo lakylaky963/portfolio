@@ -106,7 +106,7 @@
         <p class="out" data-line>A software engineer or full-stack role.
 JavaScript, React, Node.js, Express, MongoDB, Java.</p>
         <p class="cmd" data-line>ls projects/</p>
-        <p class="out" data-line><a href="#p-codezi">codezi/</a>  <a href="#p-flights">flight-monitor/</a>  <a href="#also">homelab-dashboard/</a>  <a href="#also">news-reader/</a></p>
+        <p class="out" data-line><a href="#p-codezi">codezi/</a>  <a href="#p-flights">flight-monitor/</a>  <a href="#p-dashboard">homelab-dashboard/</a>  <a href="#p-news">news-reader/</a></p>
         <p class="cmd" data-line><span class="cursor" aria-hidden="true"></span></p>
       </div>
     </div>
@@ -198,14 +198,27 @@ JavaScript, React, Node.js, Express, MongoDB, Java.</p>
         </div>
       </article>
 
-      <div class="also" id="also">
-        <h3 class="label">Also on the server</h3>
-        <ul>
-          <li><span class="also-name">Homelab dashboard</span><span class="also-what">The control panel I wrote for the server: live graphs from the Proxmox API, a topology map, health checks, one-click sites and updates. React, Vite, Node.js.</span><span class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/">Live <svg class="icon"><use href="#i-arrow"/></svg></a><a class="quiet" href="https://github.com/home-lab-TH/landingPage">Code <svg class="icon"><use href="#i-out"/></svg></a></span></li>
-          <li><span class="also-name">News reader</span><span class="also-what">An RSS reader that pulls a dozen feeds and learns what I want to read from a thumbs up or down. Node.js, MongoDB.</span><span class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/news/">Live <svg class="icon"><use href="#i-arrow"/></svg></a></span></li>
-        </ul>
-      </div>
-    </section>
+      <article class="project" id="p-dashboard">
+        <a class="shot" href="https://central-proxy.bluebuck-tailor.ts.net/"><img src="img/dashboard.jpg" width="800" height="500" loading="lazy" alt="Homelab dashboard showing live CPU, memory, network and disk graphs"></a>
+        <div class="project-text">
+          <span class="pill"><span class="dot" data-site="dashboard"></span>Control panel</span>
+          <h2>Homelab dashboard</h2>
+          <p class="lead">The control panel I wrote for the server: live graphs from the Proxmox API, a topology map, health checks, one-click sites and updates.</p>
+          <ul class="tags"><li class="tag">React</li><li class="tag">Vite</li><li class="tag">Node.js</li><li class="tag">Proxmox API</li></ul>
+          <div class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/">Live <svg class="icon"><use href="#i-arrow"/></svg></a><a class="quiet" href="https://github.com/home-lab-TH/landingPage">Code <svg class="icon"><use href="#i-out"/></svg></a></div>
+        </div>
+      </article>
+
+      <article class="project" id="p-news">
+        <a class="shot" href="https://central-proxy.bluebuck-tailor.ts.net/news/"><img src="img/news.jpg" width="800" height="500" loading="lazy" alt="News reader showing a ranked list of headlines with thumbs up and down"></a>
+        <div class="project-text">
+          <span class="pill"><span class="dot" data-site="route:news"></span>RSS reader</span>
+          <h2>News reader</h2>
+          <p class="lead">Pulls a dozen feeds and learns what I want to read from a thumbs up or down, then ranks a "For You" tab.</p>
+          <ul class="tags"><li class="tag">Node.js</li><li class="tag">MongoDB</li><li class="tag">pm2</li></ul>
+          <div class="project-links"><a class="quiet" href="https://central-proxy.bluebuck-tailor.ts.net/news/">Live <svg class="icon"><use href="#i-arrow"/></svg></a></div>
+        </div>
+      </article>    </section>
 
     <section class="chapter" id="resume" aria-labelledby="resume-title">
       <div class="chapter-head">
