@@ -11,6 +11,7 @@
 <link rel="preload" href="fonts/IBMPlexSans-SemiBold-Latin1.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="shared/cyber-theme.css">
 <link rel="stylesheet" href="hub.css">
+<link rel="stylesheet" href="hub/skin.css">
 <script>
   // Apply saved theme/lang before first paint to avoid a flash.
   try {
@@ -48,6 +49,7 @@
       <span class="cred-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="credBar"><i id="credFill"></i></span>
     </div>
     <div class="eddies cyber-clip-sm"><b id="eddies">0</b><span>€$</span></div>
+    <div class="hud-settings">
     <div class="themes" role="radiogroup" id="themes" data-t-label="themeLabel">
       <button type="button" role="radio" data-theme-btn="yellow" class="sw sw-y"><span class="sr-only">Yellow</span></button>
       <button type="button" role="radio" data-theme-btn="cyan" class="sw sw-c"><span class="sr-only">Cyan</span></button>
@@ -56,6 +58,7 @@
     <button type="button" class="hud-btn" id="muteBtn" aria-pressed="false"></button>
     <button type="button" class="hud-btn" id="ambientBtn" aria-pressed="false"></button>
     <button type="button" class="hud-btn" id="langBtn"></button>
+    </div>
     <button type="button" class="hud-btn lb-btn" id="lbBtn" aria-haspopup="dialog">
       <span aria-hidden="true">★</span>
       <span data-t="lbBtn">RANKS</span>
@@ -87,6 +90,9 @@
     </dl>
   </section>
 
+  <div class="section-head" aria-hidden="true">
+    <span class="sh-idx">02</span><span class="sh-title" data-t="cabinets">CABINETS</span><span class="sh-line"></span><span class="sh-code" data-t="cabinetsCode"></span>
+  </div>
   <nav class="filters" id="filters" data-t-label="filterLabel">
     <button type="button" data-filter="all" aria-pressed="true" data-t="filters.all"></button>
     <button type="button" data-filter="defense" aria-pressed="false" data-t="filters.defense"></button>

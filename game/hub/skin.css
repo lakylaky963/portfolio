@@ -1,0 +1,166 @@
+/* Night Lab // Arcade 2077 — v2 skin: game-menu HUD over the live city.
+   Loaded after hub.css; only overrides look, never layout logic used by hub.js. */
+:root {
+  --glass: rgba(7, 7, 14, .72);
+  --glass-strong: rgba(5, 5, 10, .86);
+  --frame: color-mix(in srgb, var(--accent) 55%, transparent);
+  --frame-dim: color-mix(in srgb, var(--accent) 22%, transparent);
+  --brk: 14px;
+}
+
+/* Corner brackets: 8 tiny gradients, no extra markup. Uses --bc. */
+.hero-copy, .stats, .card, .drawer, .modal, .section-head {
+  --bc: var(--frame);
+}
+.brk, .hero-copy, .stat, .drawer-body, .modal-body {
+  background-image:
+    linear-gradient(var(--bc), var(--bc)), linear-gradient(var(--bc), var(--bc)),
+    linear-gradient(var(--bc), var(--bc)), linear-gradient(var(--bc), var(--bc)),
+    linear-gradient(var(--bc), var(--bc)), linear-gradient(var(--bc), var(--bc)),
+    linear-gradient(var(--bc), var(--bc)), linear-gradient(var(--bc), var(--bc));
+  background-repeat: no-repeat;
+  background-size:
+    var(--brk) 1.5px, 1.5px var(--brk), var(--brk) 1.5px, 1.5px var(--brk),
+    var(--brk) 1.5px, 1.5px var(--brk), var(--brk) 1.5px, 1.5px var(--brk);
+  background-position:
+    0 0, 0 0, 100% 0, 100% 0,
+    0 100%, 0 100%, 100% 100%, 100% 100%;
+}
+
+/* ---------- HUD bar ---------- */
+.hud {
+  background: linear-gradient(180deg, rgba(4, 4, 9, .92), rgba(4, 4, 9, .72));
+  backdrop-filter: none;
+  border-bottom: 0;
+  padding-block: .55rem;
+  flex-wrap: nowrap;
+}
+.hud::before {
+  content: ''; position: absolute; inset-inline: 0; bottom: -4px; height: 3px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, var(--frame-dim) 0 2px, transparent 2px 8px);
+}
+.brand { font-size: 1.15rem; letter-spacing: .22em; }
+.brand::before {
+  content: ''; width: 10px; height: 18px; align-self: center; margin-inline-end: .2rem;
+  background: var(--accent); clip-path: polygon(0 0, 100% 25%, 100% 75%, 0 100%);
+  box-shadow: 0 0 12px var(--accent);
+}
+:root[dir="rtl"] .brand::before { transform: scaleX(-1); }
+.hud-right { flex-wrap: nowrap; gap: .4rem; min-width: 0; }
+.hud-btn, .hud-back, .eddies, .cred, .brand { white-space: nowrap; flex-shrink: 0; }
+.hud-settings {
+  display: flex; align-items: center; gap: 2px; padding: 2px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .02);
+}
+.hud-settings .themes { border: 0; min-height: 40px; padding: 4px 6px; }
+.hud-settings .hud-btn { border-color: transparent; min-height: 40px; }
+.hud-settings .hud-btn:hover { border-color: var(--accent); }
+.sw { width: 18px; height: 18px; }
+.hud-btn, .hud-back, .cred, .eddies { background-color: rgba(8, 8, 15, .6); }
+.hud-btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); text-shadow: 0 0 8px var(--accent); }
+
+/* ---------- Hero ---------- */
+.hero { align-items: stretch; }
+.hero-copy {
+  position: relative; padding: clamp(1.2rem, 3vw, 2.2rem);
+  background-color: var(--glass);
+  box-shadow: inset 0 0 0 1px var(--frame-dim), 0 30px 80px rgba(0, 0, 0, .45);
+}
+.hero-copy::after {
+  content: ''; position: absolute; top: 0; inset-inline-start: var(--brk); inset-inline-end: 40%; height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+:root[dir="rtl"] .hero-copy::after { background: linear-gradient(270deg, var(--accent), transparent); }
+.hero h1 { text-shadow: 0 2px 0 rgba(0, 0, 0, .6); }
+.hero h1 em { position: relative; text-shadow: 0 0 28px color-mix(in srgb, var(--accent) 50%, transparent), 2px 0 0 color-mix(in srgb, var(--accent-2) 55%, transparent), -2px 0 0 color-mix(in srgb, var(--magenta) 45%, transparent); }
+.lede { color: #cfd4e6; }
+.status { color: var(--ok); }
+
+.stats { align-content: end; }
+.stat {
+  background-color: var(--glass);
+  box-shadow: inset 0 0 0 1px var(--frame-dim);
+  --bc: var(--frame);
+}
+.stat::before { width: 3px; box-shadow: 0 0 10px var(--accent); }
+.stat dd { font-size: 1.8rem; text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* ---------- Section head ---------- */
+.section-head {
+  display: flex; align-items: center; gap: .8rem; margin: 0 0 .9rem;
+  font: 700 .78rem var(--mono); letter-spacing: .24em; text-transform: uppercase;
+}
+.sh-idx { padding: .2rem .45rem; background: var(--accent); color: var(--accent-ink); }
+.sh-title { color: var(--text); text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 40%, transparent); }
+.sh-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--frame), var(--frame-dim) 60%, transparent); }
+:root[dir="rtl"] .sh-line { background: linear-gradient(270deg, var(--frame), var(--frame-dim) 60%, transparent); }
+.sh-code { color: var(--muted); font-size: .66rem; letter-spacing: .16em; }
+
+.filters {
+  padding: .5rem; border: 0; background: var(--glass);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.filters button { background: rgba(255, 255, 255, .02); }
+.keys { color: #8f97b5; }
+
+/* ---------- Cards ---------- */
+.grid { gap: 1.3rem; }
+.card {
+  background: linear-gradient(180deg, rgba(14, 14, 26, .82), rgba(6, 6, 12, .9));
+}
+.card-preview { border-bottom: 1px solid var(--frame-dim); }
+.card-preview::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, .18) 0 1px, transparent 1px 3px);
+}
+.card-body { position: relative; }
+.card-body::before {
+  content: ''; position: absolute; top: .9rem; inset-inline-end: 1.1rem; width: 34px; height: 6px;
+  background: repeating-linear-gradient(90deg, var(--ga) 0 3px, transparent 3px 6px); opacity: .55;
+}
+.card-title { letter-spacing: .01em; text-transform: uppercase; font-size: 1.25rem; }
+.card-tag::before { content: '◢ '; }
+/* Hover: light sweep across the cabinet. */
+.card::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--ga) 18%, transparent) 50%, transparent 65%);
+  background-size: 250% 100%; background-position: 120% 0;
+}
+.card:hover::after, .card.is-sel::after { opacity: 1; animation: sweep .9s var(--ease) forwards; }
+@keyframes sweep { to { background-position: -30% 0; } }
+.card:hover, .card.is-sel { filter: drop-shadow(0 0 22px color-mix(in srgb, var(--ga) 45%, transparent)); }
+
+/* ---------- Drawer / modal ---------- */
+.drawer { background: var(--glass-strong); backdrop-filter: blur(16px) saturate(1.3); }
+.modal { background: var(--glass-strong); backdrop-filter: blur(16px) saturate(1.3); }
+.drawer-body, .modal-body { --bc: var(--frame-dim); }
+
+.foot { text-align: center; color: #8089a8; }
+
+/* ---------- Narrow: brand row + one compact, scrollable HUD row ---------- */
+@media (max-width: 1439px) {
+  .hud { flex-wrap: wrap; row-gap: .35rem; }
+  .brand { width: auto; order: 0; flex: 1; }
+  .hud-back { order: -1; }
+  .hud-right {
+    order: 2; width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; contain: paint;
+    padding-bottom: 2px; mask-image: linear-gradient(90deg, #000 88%, transparent);
+  }
+  :root[dir="rtl"] .hud-right { mask-image: linear-gradient(270deg, #000 88%, transparent); }
+  .hud-right::-webkit-scrollbar { display: none; }
+  .hud-right > * { flex-shrink: 0; }
+}
+@media (max-width: 720px) {
+  .brand { font-size: .95rem; letter-spacing: .16em; }
+  .hud-back { font-size: 0; min-width: 44px; justify-content: center; }
+  .hud-back::after { content: '←'; font-size: 1rem; }
+  :root[dir="rtl"] .hud-back::after { content: '→'; }
+  .hero-copy { padding: 1.1rem; }
+  .section-head .sh-code { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card:hover::after, .card.is-sel::after { animation: none; opacity: 0; }
+}
+
+/* Hidden toast must not peek above the bottom edge. */
+.toast:not(.on) { visibility: hidden; }
