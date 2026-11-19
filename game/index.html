@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10121b">
+<title>Homelab Defender</title>
+<meta name="description" content="Homelab Defender: a tower-defense game about protecting a server rack. Playable in your browser, runs entirely on my homelab.">
+<link rel="icon" href="/portfolio/img/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/IBMPlexSans-Regular-Latin1.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="bar rtl-ui">
+    <a id="back" class="back" href="/portfolio/" data-i18n="back">Back to portfolio</a>
+    <h1 class="title" data-i18n="title">Homelab Defender</h1>
+    <div class="stats" aria-live="off">
+      <div class="stat"><span class="k" data-i18n="lives">Integrity</span><b id="st-lives" class="v ok">0</b></div>
+      <div class="stat"><span class="k" data-i18n="cash">Credits</span><b id="st-cash" class="v amber">0</b></div>
+      <div class="stat"><span class="k" data-i18n="wave">Wave</span><b id="st-wave" class="v">0</b></div>
+      <div class="stat"><span class="k" data-i18n="score">Score</span><b id="st-score" class="v">0</b></div>
+    </div>
+    <div class="ctl">
+      <button id="b-pause" class="icon-btn" type="button" data-i18n-title="pause">❚❚</button>
+      <button id="b-speed" class="icon-btn txt" type="button" data-i18n-title="speed">1×</button>
+      <button id="b-mute" class="icon-btn" type="button" data-i18n-title="mute">♪</button>
+      <button id="b-menu" class="icon-btn" type="button" data-i18n-title="menu">☰</button>
+      <button id="b-lang" class="icon-btn txt" type="button" aria-label="Language">עב</button>
+    </div>
+  </header>
+
+  <main class="play">
+    <div class="stage" dir="ltr">
+      <canvas id="cv" aria-label="Game board"></canvas>
+      <div id="banner" class="banner" aria-live="polite"></div>
+      <div id="toasts" class="toasts" aria-live="polite"></div>
+      <div id="paused" class="paused rtl-ui" hidden><span data-i18n="paused">Paused</span></div>
+    </div>
+
+    <aside class="side rtl-ui">
+      <section class="panel">
+        <h2 data-i18n="towers">Towers</h2>
+        <div id="palette" class="palette"></div>
+      </section>
+      <section id="sel" class="panel sel" hidden></section>
+      <section class="panel">
+        <h2 data-i18n="abilities">Abilities</h2>
+        <div class="abilities">
+          <button id="ab-emp" class="ability" type="button"><span class="ab-fill"></span><span class="ab-name"></span><span class="ab-key">Q</span><span class="ab-cd"></span></button>
+          <button id="ab-overclock" class="ability" type="button"><span class="ab-fill"></span><span class="ab-name"></span><span class="ab-key">W</span><span class="ab-cd"></span></button>
+        </div>
+      </section>
+      <button id="b-send" class="send" type="button"><span id="send-label"></span><span id="send-sub" class="sub"></span></button>
+    </aside>
+  </main>
+
+  <!-- start / map select -->
+  <div id="menu" class="overlay rtl-ui" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+    <div class="card menu-card">
+      <div class="menu-head">
+        <h2 id="menu-title" class="big" data-i18n="title">Homelab Defender</h2>
+        <p class="lede" data-i18n="tagline">Stop the malware before it reaches your server rack.</p>
+      </div>
+      <div class="seg" role="group">
+        <button id="m-campaign" type="button" class="on" data-i18n="campaign">Campaign (20 waves)</button>
+        <button id="m-endless" type="button" data-i18n="endless">Endless</button>
+      </div>
+      <h3 class="sub-h" data-i18n="pickMap">Choose a network</h3>
+      <div id="maps" class="maps"></div>
+      <p class="how" data-i18n="how"></p>
+      <p class="keys" data-i18n="keys"></p>
+      <details class="badges-box">
+        <summary><span data-i18n="badges">Badges</span> <span id="badge-count" class="muted"></span></summary>
+        <ul id="badge-list" class="badge-list"></ul>
+      </details>
+    </div>
+  </div>
+
+  <!-- end of run -->
+  <div id="end" class="overlay rtl-ui" role="dialog" aria-modal="true" aria-labelledby="end-title" hidden>
+    <div class="card end-card">
+      <h2 id="end-title" class="big"></h2>
+      <p id="end-text" class="lede"></p>
+      <div class="final"><span data-i18n="finalScore">Final score</span><b id="end-score"></b></div>
+      <p id="end-best" class="muted"></p>
+      <ul id="end-badges" class="badge-list"></ul>
+      <div class="actions">
+        <button id="e-endless" type="button" class="btn primary" data-i18n="keepGoing" hidden>Go endless</button>
+        <button id="e-again" type="button" class="btn primary" data-i18n="again">Play again</button>
+        <button id="e-menu" type="button" class="btn" data-i18n="menu">Menu</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<noscript><p style="padding:2rem;color:#eef0f6">Homelab Defender needs JavaScript.</p></noscript>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

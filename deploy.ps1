@@ -6,11 +6,11 @@ $tgz  = Join-Path $env:TEMP 'portfolio-deploy.tgz'
 $ct   = 101
 $dest = '/var/www/portfolio'
 
-# Package everything except repo/dev files.
+# Package everything except repo/dev files (game/ ships; its unit tests and package.json do not).
 $ex = @('.git', '.gitignore', 'deploy.ps1', 'README.md', 'DESIGN.md')
 $items = Get-ChildItem -LiteralPath $root -Force | Where-Object { $ex -notcontains $_.Name } | ForEach-Object { $_.Name }
 Push-Location $root
-try { tar -czf $tgz @items; if ($LASTEXITCODE) { throw 'tar failed' } } finally { Pop-Location }
+try { & (Join-Path (Join-Path $env:SystemRoot 'System32') 'tar.exe') -czf $tgz --exclude='*.test.mjs' --exclude='game/package.json' @items; if ($LASTEXITCODE) { throw 'tar failed' } } finally { Pop-Location }
 
 scp -q $tgz root@server:/tmp/portfolio-deploy.tgz
 if ($LASTEXITCODE) { throw 'scp failed' }
