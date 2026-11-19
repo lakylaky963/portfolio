@@ -1,5 +1,5 @@
 // Animated mini-scenes for each game card. One shared rAF loop; only visible canvases render.
-import { hexA } from './bg.js';
+import { hexA } from './bg.js?v=20261120';
 
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);

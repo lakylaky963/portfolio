@@ -6,9 +6,9 @@ import {
   resetProfile, markLaunched, getGame,
   getAuth, signInOrRegister, signInHomelab, signOutAndFlush, fetchLeaderboard, hasMidRun, pullSession,
 } from '../shared/hub-sdk.js';
-import { t as tr } from './i18n.js';
+import { t as tr } from './i18n.js?v=20261120';
 import * as audio from './audio.js';
-import { startBackground } from './bg.js';
+import { startBackground } from './bg.js?v=20261120';
 import { startPreviews } from './previews.js';
 
 const $ = (s, r = document) => r.querySelector(s);

@@ -2,10 +2,10 @@
 // Layers (back to front): smog sky + searchlights, far towers, flyers, mid towers + signs + holo boards,
 // elevated highway traffic, near flyers, near towers + signs, rain, fog/vignette.
 // Static geometry is baked into offscreen canvases; only lights, signs, traffic and rain animate.
-export function startBackground(canvas) {
+export function startBackground(canvas, opts = {}) {
   const ctx = canvas.getContext('2d');
   const mq = (q) => globalThis.matchMedia && matchMedia(q).matches;
-  const reduce = mq('(prefers-reduced-motion: reduce)');
+  const reduce = !!opts.still || mq('(prefers-reduced-motion: reduce)'); // still = one frame, redrawn on resize
   let small = mq('(max-width: 720px)');
   let w = 0, h = 0, dpr = 1, raf = 0, running = true, last = 0, lastDraw = 0;
   let accent = '#fcee09', accent2 = '#00f0ff';
