@@ -42,7 +42,8 @@ const D = {
     'bdesc.chain-reaction': 'Hit 5 enemies with one Arc Coil zap.', 'bdesc.max-level': 'Upgrade a tower to tier 3.', 'bdesc.tycoon': 'Hold 1,500 credits.',
     'bdesc.quick-draw': 'Earn 20+ from one early send.', 'bdesc.both-abilities': 'Use both abilities in one run.',
     'bdesc.flawless-wave': 'Clear wave 10+ without a leak.', 'bdesc.victory': 'Win the campaign.', 'bdesc.flawless': 'Win without losing integrity.', 'bdesc.endless-30': 'Clear wave 30 in Endless.',
-    back: 'Back to portfolio', lang: 'עב',
+    back: '◢ NIGHT LAB HUB', backPortfolio: '← Back to portfolio', eddies: 'Eddies', cred: 'Street Cred XP', lang: 'עב',
+    resumeSaved: '▶ RESUME SAVED RUN', savedProgress: 'Progress auto-saved',
   },
   he: {
     title: 'מגן המעבדה',
@@ -86,7 +87,8 @@ const D = {
     'bdesc.chain-reaction': 'פגעו ב-5 אויבים בברק אחד.', 'bdesc.max-level': 'שדרגו מגדל לדרגה 3.', 'bdesc.tycoon': 'החזיקו 1,500 קרדיטים.',
     'bdesc.quick-draw': 'הרוויחו 20+ משליחה מוקדמת אחת.', 'bdesc.both-abilities': 'השתמשו בשתי היכולות בריצה אחת.',
     'bdesc.flawless-wave': 'נקו גל 10+ בלי דליפה.', 'bdesc.victory': 'נצחו את הקמפיין.', 'bdesc.flawless': 'נצחו בלי לאבד שלמות.', 'bdesc.endless-30': 'נקו גל 30 באינסופי.',
-    back: 'חזרה לפורטפוליו', lang: 'EN',
+    back: '◢ מרכז הלילה', backPortfolio: '← חזרה לפורטפוליו', eddies: 'אדיז', cred: 'מוניטין רחוב XP', lang: 'EN',
+    resumeSaved: '▶ המשך ריצה שמורה', savedProgress: 'ההתקדמות נשמרה אוטומטית',
   },
 };
 
@@ -104,6 +106,7 @@ export function t(key, params) {
 export function applyLang(l, root = document) {
   lang = l === 'he' ? 'he' : 'en';
   document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
   document.documentElement.dataset.lang = lang;
   root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
   root.querySelectorAll('[data-i18n-title]').forEach((el) => { el.title = t(el.dataset.i18nTitle); el.setAttribute('aria-label', el.title); });

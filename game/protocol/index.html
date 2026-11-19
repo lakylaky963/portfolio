@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BREACH PROTOCOL // Hex Matrix Hacker</title>
+<meta name="description" content="A Cyberpunk-style breach protocol hacking roguelike: route through the hex matrix, upload daemons, buy cyberdeck upgrades.">
+<link rel="icon" href="/portfolio/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../shared/cyber-theme.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="hud" class="hud">
+  <a class="hub-link" id="hubLink" href="../" data-i18n="hub">◀ CYBER HUB</a>
+  <div class="stats">
+    <div class="stat"><span data-i18n="tier">SERVER TIER</span><b id="sTier">1</b><small id="sTierName"></small></div>
+    <div class="stat"><span data-i18n="streak">STREAK</span><b id="sStreak">0</b></div>
+    <div class="stat"><span data-i18n="eddies">EDDIES</span><b id="sEddies">0</b></div>
+    <div class="stat"><span data-i18n="score">SCORE</span><b id="sScore">0</b></div>
+    <div class="stat timer" id="timerStat"><span data-i18n="timer">BREACH TIMER</span><b id="sTimer">--</b></div>
+  </div>
+  <div class="tools">
+    <button id="pauseBtn" class="chip" type="button" aria-label="Pause" hidden>❚❚</button>
+    <button id="langBtn" class="chip" type="button" aria-label="Language">עב</button>
+    <button id="muteBtn" class="chip" type="button" aria-label="Mute">🔊</button>
+  </div>
+</header>
+
+<main class="term">
+  <section class="panel matrix-panel">
+    <h2 data-i18n="matrix">CODE MATRIX</h2>
+    <div id="grid" class="grid" role="grid" aria-label="Code matrix"></div>
+    <p id="status" class="status"></p>
+  </section>
+
+  <section class="panel side-panel">
+    <h2 data-i18n="buffer">BUFFER</h2>
+    <div id="buffer" class="buffer" aria-live="polite"></div>
+    <h2 data-i18n="sequences">SEQUENCE REQUIRED TO UPLOAD</h2>
+    <div id="daemons" class="daemons"></div>
+    <h2 data-i18n="quickhack">QUICKHACK</h2>
+    <div class="quick">
+      <button id="qFreeze" type="button" class="qbtn"><kbd>Q</kbd><span data-i18n="freeze">TIME FREEZE</span><b id="cFreeze">0</b></button>
+      <button id="qFlip" type="button" class="qbtn"><kbd>W</kbd><span data-i18n="flip">AXIS FLIP</span><b id="cFlip">0</b></button>
+      <button id="qHint" type="button" class="qbtn"><kbd>E</kbd><span data-i18n="hint">SHOW HINT</span><b id="cHint">0</b></button>
+    </div>
+    <button id="execBtn" type="button" class="primary" data-i18n="execute">EXECUTE EARLY</button>
+  </section>
+</main>
+
+<div id="overlay" class="overlay" hidden>
+  <div id="modal" class="modal" role="dialog" aria-modal="true"></div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

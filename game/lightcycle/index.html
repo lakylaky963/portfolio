@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>LIGHTCYCLE // Netrunner Trace 2077</title>
+  <meta name="description" content="Cyberpunk 2077 Tron lightcycle arena: buffered turns, Phase Cloak, Nitro Boost, EMP shards, and corporate ICE hunters.">
+  <link rel="icon" href="/portfolio/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../shared/cyber-theme.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header id="hud">
+    <a class="hub-link cyber-clip-sm" id="hubLink" href="../">◢ CYBER HUB</a>
+
+    <div class="hud-stats">
+      <div class="stat">
+        <span data-i="round">ROUND</span>
+        <b id="sRound">1/10</b>
+      </div>
+      <div class="stat">
+        <span data-i="hunters">HUNTERS</span>
+        <b id="sHunters" class="c-mag">1</b>
+      </div>
+      <div class="stat">
+        <span data-i="lives">LIVES</span>
+        <b id="sLives" class="c-ok">◆◆◆</b>
+      </div>
+      <div class="stat meter-stat">
+        <div class="meter-head"><span data-i="cloak">CLOAK</span><em id="sCloak">100%</em></div>
+        <i class="meter cloak-meter"><u id="cloakBar"></u></i>
+      </div>
+      <div class="stat meter-stat">
+        <div class="meter-head"><span data-i="boost">NITRO</span><em id="sBoost">100%</em></div>
+        <i class="meter boost-meter"><u id="boostBar"></u></i>
+      </div>
+      <div class="stat">
+        <span data-i="score">SCORE</span>
+        <b id="sScore" class="c-cyan">0</b>
+      </div>
+      <div class="stat">
+        <span data-i="eddies">EDDIES</span>
+        <b id="sEddies" class="c-yellow">0 €$</b>
+      </div>
+    </div>
+
+    <div class="hud-actions">
+      <button type="button" id="bPause" class="hud-btn cyber-clip-sm" data-i="pause" title="P / Esc">PAUSE</button>
+      <button type="button" id="bMute" class="hud-btn cyber-clip-sm" data-i="mute">MUTE</button>
+      <button type="button" id="bLang" class="hud-btn cyber-clip-sm">עב</button>
+    </div>
+  </header>
+
+  <main id="stage" dir="ltr">
+    <canvas id="cv"></canvas>
+    <div id="banner" hidden></div>
+
+    <section id="overlay" class="overlay" aria-live="polite">
+      <div class="panel cyber-clip">
+        <div class="panel-head">
+          <h1 id="ovTitle" data-i="title">LIGHTCYCLE</h1>
+          <p id="ovSub" class="subtitle" data-i="subtitle">NETRUNNER TRACE // 2077</p>
+        </div>
+
+        <!-- START MENU -->
+        <div id="menuBody" class="ov-body">
+          <div id="resumeBox" class="resume-box cyber-clip-sm" hidden>
+            <button type="button" id="bResume" class="cyber-btn resume-btn" data-i="resumeSaved">▶ RESUME SAVED RUN</button>
+            <div id="resumeMeta" class="resume-meta"></div>
+          </div>
+
+          <div class="section-label" data-i="selectArena">SELECT ARENA</div>
+          <div id="arenaGrid" class="arena-grid" role="radiogroup" aria-label="Select Arena">
+            <button type="button" class="arena-card cyber-clip-sm selected" data-arena="watson" style="--ac: #00f0ff">
+              <span class="arena-tag">01</span>
+              <strong data-i="arena_watson">WATSON GRID</strong>
+              <small data-i="arena_watson_desc">Open neon circuit. Lethal perimeter walls.</small>
+            </button>
+            <button type="button" class="arena-card cyber-clip-sm" data-arena="kabuki" style="--ac: #ff2bd6">
+              <span class="arena-tag">02</span>
+              <strong data-i="arena_kabuki">KABUKI PILLARS</strong>
+              <small data-i="arena_kabuki_desc">Cyber-monolith choke points &amp; ambush lanes.</small>
+            </button>
+            <button type="button" class="arena-card cyber-clip-sm" data-arena="blackwall" style="--ac: #ff003c">
+              <span class="arena-tag">03</span>
+              <strong data-i="arena_blackwall">BLACKWALL WARP</strong>
+              <small data-i="arena_blackwall_desc">No walls — edges warp across the grid.</small>
+            </button>
+          </div>
+
+          <div class="action-row">
+            <button type="button" id="bStart" class="cyber-btn primary-btn" data-i="start">JACK IN</button>
+          </div>
+
+          <p class="controls-hint" data-i="controlsHint">WASD / Arrows: Steer (buffered) · SHIFT: Nitro Boost · SPACE: Phase Cloak · P: Pause</p>
+        </div>
+
+        <!-- PAUSE MENU -->
+        <div id="pauseBody" class="ov-body" hidden>
+          <p class="pause-note" data-i="pausedSub">Auto-saved · Press P or click Resume to continue</p>
+          <div class="action-row">
+            <button type="button" id="bResumePause" class="cyber-btn primary-btn" data-i="resume">RESUME</button>
+            <button type="button" id="bMenuPause" class="cyber-btn ghost" data-i="selectArena">SELECT ARENA</button>
+          </div>
+        </div>
+
+        <!-- ROUND CLEAR / LIFE LOST -->
+        <div id="roundBody" class="ov-body" hidden>
+          <div id="roundDetail" class="round-detail"></div>
+          <div class="action-row">
+            <button type="button" id="bContinueRound" class="cyber-btn primary-btn" data-i="nextRoundBtn">NEXT ROUND ▶</button>
+          </div>
+        </div>
+
+        <!-- VICTORY / GAME OVER -->
+        <div id="endBody" class="ov-body" hidden>
+          <div id="newBestBadge" class="best-badge cyber-clip-sm" data-i="newBest" hidden>★ NEW PERSONAL BEST</div>
+          <div class="result-grid">
+            <div class="res-cell"><span data-i="finalScore">FINAL SCORE</span><b id="rScore">0</b></div>
+            <div class="res-cell"><span data-i="roundsCleared">ROUNDS</span><b id="rRounds">0</b></div>
+            <div class="res-cell"><span data-i="takedowns">DEREZZED</span><b id="rKills">0</b></div>
+            <div class="res-cell"><span data-i="bestCombo">MAX COMBO</span><b id="rCombo">0×</b></div>
+          </div>
+          <div class="rewards-bar cyber-clip-sm">
+            <span data-i="earned">EARNED</span>
+            <b id="rEddies" class="c-yellow">+0 €$</b>
+            <span class="dot">·</span>
+            <b id="rXp" class="c-ok">+0 XP</b>
+          </div>
+          <div class="action-row">
+            <button type="button" id="bEndless" class="cyber-btn endless-btn" data-i="continueEndless" hidden>ENDLESS TRACE ∞</button>
+            <button type="button" id="bRetry" class="cyber-btn primary-btn" data-i="retry">RE-JACK IN</button>
+            <button type="button" id="bBackMenu" class="cyber-btn ghost" data-i="selectArena">SELECT ARENA</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="touchControls" dir="ltr" aria-label="Touch Controls">
+    <div class="dpad">
+      <button type="button" class="pad-btn pad-up" data-dir="up" aria-label="Up">▲</button>
+      <button type="button" class="pad-btn pad-left" data-dir="left" aria-label="Left">◀</button>
+      <button type="button" class="pad-btn pad-down" data-dir="down" aria-label="Down">▼</button>
+      <button type="button" class="pad-btn pad-right" data-dir="right" aria-label="Right">▶</button>
+    </div>
+    <div class="touch-abilities">
+      <button type="button" id="mCloak" class="ability-btn cloak-btn cyber-clip-sm" data-i="mobCloak">CLOAK</button>
+      <button type="button" id="mBoost" class="ability-btn boost-btn cyber-clip-sm" data-i="mobBoost">NITRO</button>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

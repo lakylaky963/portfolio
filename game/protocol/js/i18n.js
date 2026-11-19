@@ -1,0 +1,63 @@
+export const STRINGS = {
+  en: {
+    title: 'BREACH PROTOCOL // HEX MATRIX',
+    hub: '◀ CYBER HUB',
+    tier: 'SERVER TIER', streak: 'STREAK', eddies: 'EDDIES', score: 'SCORE', timer: 'BREACH TIMER',
+    matrix: 'CODE MATRIX', buffer: 'BUFFER', sequences: 'SEQUENCE REQUIRED TO UPLOAD', quickhack: 'QUICKHACK',
+    freeze: 'TIME FREEZE', flip: 'AXIS FLIP', hint: 'SHOW HINT',
+    execute: 'EXECUTE EARLY',
+    uploaded: 'UPLOADED ✓', locked: 'LOCKED ✗', pending: 'PENDING',
+    waiting: 'Timer starts on your first click. Plan your route.',
+    running: 'BREACH IN PROGRESS',
+    complete: 'BREACH COMPLETE', sweepTitle: 'FULL SWEEP — ALL DAEMONS UPLOADED', partialTitle: 'DAEMONS UPLOADED',
+    fullSweepBonus: 'Full Sweep Bonus', speedBonus: 'Speed Bonus', streakMult: 'Streak Multiplier', scoreMult: 'Score Multiplier',
+    baseReward: 'Daemon Rewards', bonusTime: 'Bonus time next server',
+    earnedEddies: 'Eddies earned', earnedXp: 'XP earned', next: 'OPEN CYBERDECK SHOP ▶',
+    traceTitle: 'TRACE DETECTED', traceSub: 'BREACH FAILED — RUN OVER',
+    shop: 'CYBERDECK SHOP', shopSub: 'Spend run Eddies before the next server', nextServer: 'JUMP TO NEXT SERVER ▶', cashOut: 'CASH OUT',
+    buffSlot: '+1 Buffer Slot', timeAdd: '+5s Breach Time', owned: 'owned', maxed: 'MAX', buy: 'BUY',
+    runEnd: 'RUN ENDED', cashedOut: 'CASHED OUT', again: 'NEW RUN', reached: 'Reached', stats: 'Final stats',
+    start: 'JACK IN', startSub: 'Alternate between rows and columns. Fill the buffer with daemon sequences.',
+    howto: 'Click or use arrow keys + Enter. Hotkeys: Q freeze · W flip · E hint · P pause.',
+    pause: 'PAUSE', resume: 'RESUME', paused: 'BREACH PAUSED', pausedSub: 'Timer frozen · progress auto-saved.',
+    resumeSaved: '▶ RESUME SAVED RUN',
+    sec: 's', tierWord: 'TIER', mute: '🔊', muted: '🔇',
+    bonusMissing: 'No funds', noDaemon: 'Upload at least 1 daemon first',
+    dm1: 'DATAMINE_V1', dm2: 'DATAMINE_V2', ice: 'ICEPICK', mass: 'MASS_VULN', bw: 'BLACKWALL_SIPHON',
+    r_DATAMINE_V1: '+Eddies', r_DATAMINE_V2: '+Big Eddies', r_ICEPICK: '+Bonus Time', r_MASS_VULN: '×2 Score', r_BLACKWALL_SIPHON: 'JACKPOT',
+  },
+  he: {
+    title: 'פרוטוקול חדירה // מטריצת הקס',
+    hub: '◀ מרכז הסייבר',
+    tier: 'דרגת שרת', streak: 'רצף', eddies: 'אדיז', score: 'ניקוד', timer: 'טיימר חדירה',
+    matrix: 'מטריצת קוד', buffer: 'באפר', sequences: 'רצפים להעלאה', quickhack: 'האק מהיר',
+    freeze: 'הקפאת זמן', flip: 'היפוך ציר', hint: 'הצג רמז',
+    execute: 'בצע מוקדם',
+    uploaded: 'הועלה ✓', locked: 'נעול ✗', pending: 'ממתין',
+    waiting: 'הטיימר מתחיל בלחיצה הראשונה. תכננו את המסלול.',
+    running: 'חדירה מתבצעת',
+    complete: 'החדירה הושלמה', sweepTitle: 'טיהור מלא — כל הדמונים הועלו', partialTitle: 'דמונים הועלו',
+    fullSweepBonus: 'בונוס טיהור מלא', speedBonus: 'בונוס מהירות', streakMult: 'מכפיל רצף', scoreMult: 'מכפיל ניקוד',
+    baseReward: 'תגמולי דמונים', bonusTime: 'זמן בונוס לשרת הבא',
+    earnedEddies: 'אדיז שהרווחת', earnedXp: 'ניסיון שהרווחת', next: 'לחנות הסייברדק ▶',
+    traceTitle: 'זוהית', traceSub: 'החדירה נכשלה — המשחק נגמר',
+    shop: 'חנות סייברדק', shopSub: 'הוציאו אדיז לפני השרת הבא', nextServer: 'לשרת הבא ▶', cashOut: 'משיכת רווחים',
+    buffSlot: '+1 משבצת באפר', timeAdd: '+5 שניות זמן', owned: 'ברשותך', maxed: 'מקס', buy: 'קנה',
+    runEnd: 'המשחק הסתיים', cashedOut: 'משכת רווחים', again: 'משחק חדש', reached: 'הגעת ל', stats: 'סיכום',
+    start: 'התחברות', startSub: 'לחלופין בין שורות ועמודות. מלאו את הבאפר ברצפי הדמונים.',
+    howto: 'לחיצה או חיצים + Enter. מקשים: Q הקפאה · W היפוך · E רמז · P השהיה.',
+    pause: 'השהיה', resume: 'המשך', paused: 'הפריצה מושהית', pausedSub: 'הטיימר הוקפא · ההתקדמות נשמרה אוטומטית.',
+    resumeSaved: '▶ המשך ריצה שמורה',
+    sec: 'ש׳', tierWord: 'דרגה', mute: '🔊', muted: '🔇',
+    bonusMissing: 'אין מספיק אדיז', noDaemon: 'יש להעלות לפחות דמון אחד',
+    dm1: 'DATAMINE_V1', dm2: 'DATAMINE_V2', ice: 'ICEPICK', mass: 'MASS_VULN', bw: 'BLACKWALL_SIPHON',
+    r_DATAMINE_V1: '+אדיז', r_DATAMINE_V2: '+הרבה אדיז', r_ICEPICK: '+זמן בונוס', r_MASS_VULN: '×2 ניקוד', r_BLACKWALL_SIPHON: 'ג׳קפוט',
+  },
+};
+
+export const TIER_NAMES_HE = ['רשת סקאב', 'צומת מייל־סטרום', 'ממסר מיליטק', 'כספת קאנג טאו', 'ליבת ביוטקניקה', 'מיקושי ארסקה', 'הרשת העמוקה של בלקוול'];
+
+let lang = 'en';
+export function getLang() { return lang; }
+export function setLang(l) { lang = l === 'he' ? 'he' : 'en'; }
+export function t(k) { return (STRINGS[lang] && STRINGS[lang][k]) || STRINGS.en[k] || k; }

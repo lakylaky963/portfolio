@@ -10,7 +10,7 @@ $dest = '/var/www/portfolio'
 $ex = @('.git', '.gitignore', 'deploy.ps1', 'README.md', 'DESIGN.md')
 $items = Get-ChildItem -LiteralPath $root -Force | Where-Object { $ex -notcontains $_.Name } | ForEach-Object { $_.Name }
 Push-Location $root
-try { & (Join-Path (Join-Path $env:SystemRoot 'System32') 'tar.exe') -czf $tgz --exclude='*.test.mjs' --exclude='game/package.json' @items; if ($LASTEXITCODE) { throw 'tar failed' } } finally { Pop-Location }
+try { & (Join-Path (Join-Path $env:SystemRoot 'System32') 'tar.exe') -czf $tgz --exclude='*.test.mjs' --exclude='package.json' --exclude='*/package.json' @items; if ($LASTEXITCODE) { throw 'tar failed' } } finally { Pop-Location }
 
 scp -q $tgz root@server:/tmp/portfolio-deploy.tgz
 if ($LASTEXITCODE) { throw 'scp failed' }

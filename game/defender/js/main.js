@@ -4,6 +4,23 @@ import { MAPS } from './maps.js';
 import { createRenderer, TOWER_COLOR } from './renderer.js';
 import * as Audio from './audio.js';
 import { t, applyLang, getLang } from './i18n.js';
+import * as HubSDK from '../../shared/hub-sdk.js';
+
+// The hub SDK is shared chrome/profile storage; never let it break the game.
+const hub = (fn, ...a) => { try { return typeof fn === 'function' ? fn(...a) : undefined; } catch (e) { return undefined; } };
+const MIDRUN_KEY = 'cp77hub.midrun.defender';
+function saveMid(snap) {
+  if (typeof HubSDK.saveMidRun === 'function') return hub(HubSDK.saveMidRun, 'defender', snap);
+  try { localStorage.setItem(MIDRUN_KEY, JSON.stringify({ ...snap, savedAt: Date.now() })); } catch (e) { /* ignore */ }
+}
+function loadMid() {
+  if (typeof HubSDK.loadMidRun === 'function') return hub(HubSDK.loadMidRun, 'defender') || null;
+  try { const raw = localStorage.getItem(MIDRUN_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function clearMid() {
+  if (typeof HubSDK.clearMidRun === 'function') return hub(HubSDK.clearMidRun, 'defender');
+  try { localStorage.removeItem(MIDRUN_KEY); } catch (e) { /* ignore */ }
+}
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -20,6 +37,7 @@ let selected = null, build = null, hover = null;
 let scores = store.get('hd.scores', {});
 let badges = store.get('hd.badges', []);
 let runBadges = [];
+let runRecorded = { done: false, won: false, score: 0, eddies: 0, xp: 0, badges: new Set() };
 let committed = true;
 let last = performance.now(), clock = 0, hudT = 0;
 
@@ -27,14 +45,17 @@ let last = performance.now(), clock = 0, hudT = 0;
 function initialLang() {
   const q = new URLSearchParams(location.search).get('lang');
   if (q === 'he' || q === 'en') return q;
+  const h = hub(HubSDK.getLang);
+  if (h === 'he' || h === 'en') return h;
   return store.get('hd.lang', (navigator.language || '').toLowerCase().startsWith('he') ? 'he' : 'en');
 }
-function setLang(l) {
+function setLang(l, syncHub = true) {
   store.set('hd.lang', l);
+  if (syncHub) hub(HubSDK.setLang, l);
   applyLang(l);
   $('b-lang').textContent = t('lang');
-  $('back').href = l === 'he' ? '/portfolio/he/' : '/portfolio/';
-  buildPalette(); buildMaps(); buildBadgeList($('badge-list'), []); refreshStatic(); lastSel = ''; lastHud = {};
+  $('back-portfolio').href = l === 'he' ? '/portfolio/he/' : '/portfolio/';
+  buildPalette(); buildMaps(); buildBadgeList($('badge-list'), []); refreshStatic(); refreshResumeBtn(); lastSel = ''; lastHud = {};
 }
 
 // ------------------------------------------------------------------ small DOM helpers
@@ -101,10 +122,10 @@ function buildMaps() {
 }
 function drawMapPreview(cv, m) {
   const g = cv.getContext('2d'), s = 20;
-  g.fillStyle = '#10121b'; g.fillRect(0, 0, 320, 200);
-  g.fillStyle = '#171a26';
+  g.fillStyle = '#07080d'; g.fillRect(0, 0, 320, 200);
+  g.fillStyle = '#0e1426';
   for (let c = 0; c < 16; c++) for (let r = 0; r < 10; r++) g.fillRect(c * s + 1, r * s + 1, s - 2, s - 2);
-  g.strokeStyle = '#ffb84d'; g.lineWidth = 7; g.lineJoin = 'round'; g.shadowColor = '#ffb84d'; g.shadowBlur = 8;
+  g.strokeStyle = '#fcee09'; g.lineWidth = 6; g.lineJoin = 'round'; g.shadowColor = '#00f0ff'; g.shadowBlur = 10;
   g.beginPath(); m.path.forEach(([c, r], i) => { const x = (c + 0.5) * s, y = (r + 0.5) * s; if (i) g.lineTo(x, y); else g.moveTo(x, y); }); g.stroke();
 }
 function buildBadgeList(ul, fresh) {
@@ -133,18 +154,143 @@ function refreshStatic() {
   $('b-pause').textContent = paused ? '▶' : '❚❚';
 }
 
+// ------------------------------------------------------------------ mid-run save & restore
+function serializeDefenderState() {
+  if (!game) return null;
+  return {
+    mapIdx,
+    runMode,
+    speed,
+    runBadges: runBadges.slice(),
+    runRecorded: {
+      done: runRecorded.done,
+      won: runRecorded.won,
+      score: runRecorded.score,
+      eddies: runRecorded.eddies,
+      xp: runRecorded.xp,
+      badges: Array.from(runRecorded.badges),
+    },
+    game: {
+      mode: game.mode,
+      endless: game.endless,
+      towers: game.towers.map((tw) => ({ ...tw })),
+      enemies: game.enemies.map((en) => ({ ...en })),
+      spawnQ: game.spawnQ.map((q) => ({ ...q })),
+      time: game.time,
+      wave: game.wave,
+      waveTimer: Number.isFinite(game.waveTimer) ? game.waveTimer : null,
+      clearedWave: game.clearedWave,
+      lives: game.lives,
+      maxLives: game.maxLives,
+      cash: game.cash,
+      score: game.score,
+      status: game.status,
+      nextId: game.nextId,
+      hpMul: game.hpMul,
+      abilities: {
+        emp: { ...game.abilities.emp },
+        overclock: { ...game.abilities.overclock },
+      },
+      stats: { ...game.stats, used: { ...game.stats.used } },
+      achievements: game.achievements.slice(),
+    },
+  };
+}
+function defenderSnapshot() {
+  return {
+    label: `Wave ${game.wave} · ${MAPS[mapIdx].id}`,
+    state: serializeDefenderState(),
+  };
+}
+function saveDefenderMidRun() {
+  if (screen !== 'play' || !game || game.status !== 'running') return;
+  saveMid(defenderSnapshot());
+}
+function restoreDefenderState(snap) {
+  const st = snap && snap.state;
+  if (!st || !st.game || !MAPS[st.mapIdx]) return false;
+  mapIdx = st.mapIdx;
+  runMode = st.runMode === 'endless' ? 'endless' : 'campaign';
+  mode = runMode;
+  speed = [1, 2, 3].includes(st.speed) ? st.speed : 1;
+  const g = E.createGame({ map: MAPS[mapIdx], mode: runMode });
+  const sg = st.game;
+  g.mode = sg.mode || runMode;
+  g.endless = !!sg.endless;
+  g.towers = Array.isArray(sg.towers) ? sg.towers.map((tw) => ({ ...tw })) : [];
+  g.enemies = Array.isArray(sg.enemies) ? sg.enemies.map((en) => ({ ...en })) : [];
+  g.spawnQ = Array.isArray(sg.spawnQ) ? sg.spawnQ.map((q) => ({ ...q })) : [];
+  g.events = [];
+  g.time = Number(sg.time) || 0;
+  g.wave = Number(sg.wave) || 0;
+  g.waveTimer = sg.waveTimer === null ? Infinity : (Number.isFinite(Number(sg.waveTimer)) ? Number(sg.waveTimer) : 20);
+  g.clearedWave = Number(sg.clearedWave) || 0;
+  g.lives = Number(sg.lives) || g.maxLives;
+  g.maxLives = Number(sg.maxLives) || g.maxLives;
+  g.cash = Number(sg.cash) || 0;
+  g.score = Number(sg.score) || 0;
+  g.status = sg.status === 'running' ? 'running' : 'running';
+  g.nextId = Number(sg.nextId) || 1;
+  g.hpMul = Number(sg.hpMul) || g.hpMul;
+  if (sg.abilities && sg.abilities.emp) g.abilities.emp = { ...g.abilities.emp, ...sg.abilities.emp };
+  if (sg.abilities && sg.abilities.overclock) g.abilities.overclock = { ...g.abilities.overclock, ...sg.abilities.overclock };
+  if (sg.stats) g.stats = { ...g.stats, ...sg.stats, used: { ...g.stats.used, ...(sg.stats.used || {}) } };
+  g.achievements = Array.isArray(sg.achievements) ? sg.achievements.slice() : [];
+
+  game = g;
+  runBadges = Array.isArray(st.runBadges) ? st.runBadges.slice() : [];
+  const rr = st.runRecorded || {};
+  runRecorded = {
+    done: !!rr.done,
+    won: !!rr.won,
+    score: Number(rr.score) || 0,
+    eddies: Number(rr.eddies) || 0,
+    xp: Number(rr.xp) || 0,
+    badges: new Set(Array.isArray(rr.badges) ? rr.badges : []),
+  };
+  selected = null; build = null; paused = false;
+  $('b-speed').textContent = speed + '×';
+  $('paused').hidden = true;
+  screen = 'play';
+  $('menu').hidden = true;
+  $('end').hidden = true;
+  lastHud = {}; lastSel = '';
+  refreshStatic(); refreshPalette(); updateHud();
+  renderer.resize();
+  committed = false;
+  $('banner').textContent = ''; $('banner').className = 'banner';
+  last = performance.now();
+  return true;
+}
+function refreshResumeBtn() {
+  const btn = $('m-resume');
+  if (!btn) return;
+  const saved = loadMid();
+  const valid = !!(saved && saved.state && saved.state.game && MAPS[saved.state.mapIdx]);
+  btn.hidden = !valid;
+  if (valid) {
+    const sg = saved.state.game;
+    const m = MAPS[saved.state.mapIdx];
+    $('m-resume-meta').textContent = `${t('wave')} ${sg.wave} · ${t('map.' + m.id)} · ${fmt(sg.score)}`;
+  }
+}
+
 // ------------------------------------------------------------------ run lifecycle
 function openMenu() {
+  if (screen === 'play' && game && game.status === 'running') saveDefenderMidRun();
   commitRun();
   screen = 'menu'; game = E.createGame({ map: MAPS[mapIdx], mode: 'campaign' });
-  $('menu').hidden = false; $('end').hidden = true;
+  $('menu').hidden = false; $('end').hidden = true; $('paused').hidden = true;
   buildMaps(); buildBadgeList($('badge-list'), []);
-  selected = null; build = null; paused = false; refreshStatic();
+  selected = null; build = null; paused = false; refreshStatic(); refreshResumeBtn();
 }
 function startGame(i, m) {
+  clearMid();
   mapIdx = i; mode = m; runMode = m;
   game = E.createGame({ map: MAPS[i], mode: m });
-  runBadges = []; selected = null; build = null; paused = false; speed = 1;
+  runBadges = [];
+  runRecorded = { done: false, won: false, score: 0, eddies: 0, xp: 0, badges: new Set() };
+  selected = null; build = null; paused = false; speed = 1;
   $('b-speed').textContent = '1×'; $('paused').hidden = true;
   screen = 'play'; $('menu').hidden = true; $('end').hidden = true;
   lastHud = {}; lastSel = '';
@@ -167,6 +313,8 @@ function mergeBadges() {
   return fresh;
 }
 function showEnd() {
+  if (!game || screen !== 'play') return;
+  clearMid();
   const won = game.status === 'won';
   committed = false; commitRun();
   const fresh = mergeBadges();
@@ -174,6 +322,28 @@ function showEnd() {
   $('end-title').textContent = won ? t('victory') : t('defeat');
   $('end-text').textContent = won ? t('victoryText') : t('defeatText') + ' ' + t('wavesReached') + ': ' + game.wave;
   $('end-score').textContent = fmt(game.score);
+
+  const totalEddies = Math.floor(game.score / 5) + (won || runRecorded.won ? 250 : 0);
+  const totalXp = Math.floor(game.score / 8) + game.wave * 15;
+  let grantEddies = totalEddies;
+  let grantXp = totalXp;
+  if (!runRecorded.done) {
+    hub(HubSDK.recordRun, 'defender', { score: game.score, eddies: grantEddies, xp: grantXp, won, wave: game.wave, badges: runBadges });
+    runRecorded = { done: true, won, score: game.score, eddies: grantEddies, xp: grantXp, badges: new Set(runBadges) };
+  } else {
+    grantEddies = Math.max(0, totalEddies - runRecorded.eddies);
+    grantXp = Math.max(0, totalXp - runRecorded.xp);
+    const newBadges = runBadges.filter((b) => !runRecorded.badges.has(b));
+    if (grantEddies > 0 || grantXp > 0 || newBadges.length > 0 || game.score > runRecorded.score) {
+      hub(HubSDK.recordRun, 'defender', { score: game.score, eddies: grantEddies, xp: grantXp, won: false, wave: game.wave, badges: newBadges });
+      runRecorded.eddies += grantEddies;
+      runRecorded.xp += grantXp;
+      runRecorded.score = Math.max(runRecorded.score, game.score);
+      newBadges.forEach((b) => runRecorded.badges.add(b));
+    }
+  }
+  $('end-eddies').textContent = '€$' + fmt(grantEddies);
+  $('end-xp').textContent = '+' + fmt(grantXp);
   $('end-best').textContent = game._newBest ? '★ ' + t('newBest') : '';
   $('e-endless').hidden = !(won && runMode === 'campaign');
   buildBadgeList($('end-badges'), fresh);
@@ -201,12 +371,17 @@ function doSend() {
   const r = E.sendWave(game);
   if (r.ok && r.bonus > 0) toast(t('earlyBonus', { b: r.bonus }), 'gold');
 }
-function togglePause() {
-  if (screen !== 'play' || game.status !== 'running') return;
-  paused = !paused; $('paused').hidden = !paused; refreshStatic();
+function setPaused(v) {
+  if (screen !== 'play' || !game || game.status !== 'running') return;
+  paused = !!v;
+  $('paused').hidden = !paused;
+  if (paused) saveDefenderMidRun();
+  else last = performance.now();
+  refreshStatic();
 }
+function togglePause() { setPaused(!paused); }
 function cycleSpeed() { speed = speed % 3 + 1; $('b-speed').textContent = speed + '×'; }
-function toggleMute() { Audio.setMuted(!Audio.isMuted()); store.set('hd.mute', Audio.isMuted()); refreshStatic(); Audio.unlock(); }
+function toggleMute() { Audio.setMuted(!Audio.isMuted()); store.set('hd.mute', Audio.isMuted()); hub(HubSDK.setMuted, Audio.isMuted()); refreshStatic(); Audio.unlock(); }
 
 // ------------------------------------------------------------------ input
 function pointerCell(ev) { return renderer.cellAt(ev.clientX, ev.clientY); }
@@ -233,6 +408,14 @@ canvas.addEventListener('click', (ev) => {
 canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); build = null; selected = null; refreshPalette(); lastSel = ''; });
 
 $('b-pause').addEventListener('click', togglePause);
+$('p-resume').addEventListener('click', () => setPaused(false));
+$('p-hub').addEventListener('click', saveDefenderMidRun);
+$('back').addEventListener('click', saveDefenderMidRun);
+$('m-resume').addEventListener('click', () => {
+  Audio.unlock();
+  const saved = loadMid();
+  if (!restoreDefenderState(saved)) { clearMid(); refreshResumeBtn(); }
+});
 $('b-speed').addEventListener('click', cycleSpeed);
 $('b-mute').addEventListener('click', toggleMute);
 $('b-menu').addEventListener('click', () => { if (screen === 'play') openMenu(); });
@@ -270,9 +453,25 @@ document.addEventListener('keydown', (ev) => {
     default:
   }
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden && screen === 'play' && game.status === 'running' && !paused) togglePause(); });
 window.addEventListener('resize', () => renderer.resize());
 if (window.ResizeObserver) new ResizeObserver(() => renderer.resize()).observe(canvas);
+
+// Auto-pause & mid-run save on tab-out / page hide via Hub SDK (with safe local fallback).
+const autoPauseOpts = {
+  gameId: 'defender',
+  isRunning: () => screen === 'play' && !!game && game.status === 'running',
+  isPaused: () => paused,
+  setPaused: (v) => setPaused(v),
+  getSnapshot: () => defenderSnapshot(),
+  getLang,
+};
+if (typeof HubSDK.installAutoPause === 'function') {
+  hub(HubSDK.installAutoPause, autoPauseOpts);
+} else {
+  const onLeave = () => { if (autoPauseOpts.isRunning()) { saveDefenderMidRun(); if (!paused) setPaused(true); } };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) onLeave(); });
+  window.addEventListener('pagehide', onLeave);
+}
 
 // ------------------------------------------------------------------ events -> audio / toasts
 function handleEvents() {
@@ -385,10 +584,16 @@ function frame(now) {
 }
 
 // ------------------------------------------------------------------ boot
-Audio.setMuted(store.get('hd.mute', false));
-applyLang(initialLang());
+const chrome = hub(HubSDK.initGameChrome, {
+  gameId: 'defender',
+  onLangChange: (l) => { if (l === 'he' || l === 'en') setLang(l, false); },
+  onMuteChange: (m) => { Audio.setMuted(!!m); store.set('hd.mute', !!m); refreshStatic(); },
+}) || {};
+const hubMuted = hub(HubSDK.getMuted);
+Audio.setMuted(typeof hubMuted === 'boolean' ? hubMuted : store.get('hd.mute', false));
+applyLang(chrome.lang === 'he' || chrome.lang === 'en' ? (new URLSearchParams(location.search).get('lang') || chrome.lang) : initialLang());
 $('b-lang').textContent = t('lang');
-$('back').href = getLang() === 'he' ? '/portfolio/he/' : '/portfolio/';
+$('back-portfolio').href = getLang() === 'he' ? '/portfolio/he/' : '/portfolio/';
 buildPalette(); refreshStatic();
 committed = true;
 openMenu();

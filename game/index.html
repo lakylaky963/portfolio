@@ -1,101 +1,233 @@
 <!doctype html>
-<html lang="en" data-lang="en">
+<html lang="en" dir="ltr" data-theme="yellow">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#10121b">
-<title>Homelab Defender</title>
-<meta name="description" content="Homelab Defender: a tower-defense game about protecting a server rack. Playable in your browser, runs entirely on my homelab.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Lab // Arcade 2077</title>
+<meta name="description" content="A hand-built browser arcade: seven neon canvas games sharing one Street Cred profile and global leaderboard.">
+<meta name="theme-color" content="#07080d">
 <link rel="icon" href="/portfolio/img/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="fonts/IBMPlexSans-Regular-Latin1.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="game.css">
+<link rel="preload" href="fonts/IBMPlexMono-Medium-Latin1.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/IBMPlexSans-SemiBold-Latin1.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="shared/cyber-theme.css">
+<link rel="stylesheet" href="hub.css">
+<script>
+  // Apply saved theme/lang before first paint to avoid a flash.
+  try {
+    var p = JSON.parse(localStorage.getItem('cp77hub.v1') || '{}'), s = p.settings || {};
+    var q = new URLSearchParams(location.search).get('lang');
+    var l = (q === 'he' || q === 'en') ? q : (s.lang || ((navigator.language || '').toLowerCase().indexOf('he') === 0 ? 'he' : 'en'));
+    var d = document.documentElement;
+    if (['yellow', 'cyan', 'crimson'].indexOf(s.theme) >= 0) d.setAttribute('data-theme', s.theme);
+    d.lang = l; d.dir = l === 'he' ? 'rtl' : 'ltr';
+  } catch (e) {}
+</script>
+<script type="module" src="hub/hub.js"></script>
 </head>
 <body>
-<div class="app">
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="scanlines" aria-hidden="true"></div>
+<a class="skip" href="#grid" data-t="skip">Skip to games</a>
 
-  <header class="bar rtl-ui">
-    <a id="back" class="back" href="/portfolio/" data-i18n="back">Back to portfolio</a>
-    <h1 class="title" data-i18n="title">Homelab Defender</h1>
-    <div class="stats" aria-live="off">
-      <div class="stat"><span class="k" data-i18n="lives">Integrity</span><b id="st-lives" class="v ok">0</b></div>
-      <div class="stat"><span class="k" data-i18n="cash">Credits</span><b id="st-cash" class="v amber">0</b></div>
-      <div class="stat"><span class="k" data-i18n="wave">Wave</span><b id="st-wave" class="v">0</b></div>
-      <div class="stat"><span class="k" data-i18n="score">Score</span><b id="st-score" class="v">0</b></div>
+<header class="hud" role="banner">
+  <a class="hud-back" id="portfolioLink" href="/portfolio/" data-t="portfolio">← PORTFOLIO</a>
+  <div class="brand" aria-label="Night Lab Arcade 2077">
+    <span class="brand-a glitch" data-text="NIGHT LAB">NIGHT LAB</span>
+    <span class="brand-sep">//</span>
+    <span class="brand-b">ARCADE 2077</span>
+  </div>
+  <div class="hud-right">
+    <button type="button" class="hud-btn auth-btn" id="authBtn" aria-haspopup="dialog">
+      <span class="auth-av" id="authBtnAvatar" aria-hidden="true">◈</span>
+      <span class="auth-btn-label" id="authBtnLabel">GUEST // SIGN IN</span>
+      <span class="auth-btn-role" id="authBtnRole" hidden></span>
+    </button>
+    <div class="cred cyber-clip-sm" id="cred" title="">
+      <span class="cred-label" data-t="cred">STREET CRED</span>
+      <span class="cred-lvl"><span data-t="lvl">LV</span> <b id="credLvl">1</b></span>
+      <span class="cred-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="credBar"><i id="credFill"></i></span>
     </div>
-    <div class="ctl">
-      <button id="b-pause" class="icon-btn" type="button" data-i18n-title="pause">❚❚</button>
-      <button id="b-speed" class="icon-btn txt" type="button" data-i18n-title="speed">1×</button>
-      <button id="b-mute" class="icon-btn" type="button" data-i18n-title="mute">♪</button>
-      <button id="b-menu" class="icon-btn" type="button" data-i18n-title="menu">☰</button>
-      <button id="b-lang" class="icon-btn txt" type="button" aria-label="Language">עב</button>
+    <div class="eddies cyber-clip-sm"><b id="eddies">0</b><span>€$</span></div>
+    <div class="themes" role="radiogroup" id="themes" data-t-label="themeLabel">
+      <button type="button" role="radio" data-theme-btn="yellow" class="sw sw-y"><span class="sr-only">Yellow</span></button>
+      <button type="button" role="radio" data-theme-btn="cyan" class="sw sw-c"><span class="sr-only">Cyan</span></button>
+      <button type="button" role="radio" data-theme-btn="crimson" class="sw sw-r"><span class="sr-only">Crimson</span></button>
     </div>
+    <button type="button" class="hud-btn" id="muteBtn" aria-pressed="false"></button>
+    <button type="button" class="hud-btn" id="ambientBtn" aria-pressed="false"></button>
+    <button type="button" class="hud-btn" id="langBtn"></button>
+    <button type="button" class="hud-btn lb-btn" id="lbBtn" aria-haspopup="dialog">
+      <span aria-hidden="true">★</span>
+      <span data-t="lbBtn">RANKS</span>
+    </button>
+    <button type="button" class="hud-btn trophy-btn" id="trophyBtn" aria-haspopup="dialog">
+      <span data-t="trophies">TROPHIES</span> <b class="badge" id="trophyCount">0</b>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="status"><i class="dot"></i><span class="glitch-soft" data-t="status">NETLINK: ONLINE // CT-101 NODE</span><span class="clock" id="clock"></span></p>
+      <p class="kicker" data-t="heroKicker"></p>
+      <h1><span data-t="heroTitleA"></span> <em data-t="heroTitleB"></em></h1>
+      <p class="lede" data-t="heroLede"></p>
+      <div class="hero-cta">
+        <button type="button" class="cyber-btn big" id="randomBtn"><span data-t="random"></span></button>
+        <a class="cyber-btn ghost big" id="continueBtn" href="#"></a>
+      </div>
+    </div>
+    <dl class="stats" id="stats">
+      <div class="stat cyber-clip-sm"><dt data-t="stats.eddies"></dt><dd id="stEddies">0</dd></div>
+      <div class="stat cyber-clip-sm"><dt data-t="stats.level"></dt><dd id="stLevel">1</dd></div>
+      <div class="stat cyber-clip-sm"><dt data-t="stats.played"></dt><dd id="stPlayed">0</dd></div>
+      <div class="stat cyber-clip-sm"><dt data-t="stats.trophies"></dt><dd id="stTrophies">0</dd></div>
+      <div class="stat cyber-clip-sm"><dt data-t="stats.score"></dt><dd id="stScore">0</dd></div>
+    </dl>
+  </section>
+
+  <nav class="filters" id="filters" data-t-label="filterLabel">
+    <button type="button" data-filter="all" aria-pressed="true" data-t="filters.all"></button>
+    <button type="button" data-filter="defense" aria-pressed="false" data-t="filters.defense"></button>
+    <button type="button" data-filter="action" aria-pressed="false" data-t="filters.action"></button>
+    <button type="button" data-filter="hacking" aria-pressed="false" data-t="filters.hacking"></button>
+    <span class="keys" data-t="keys"></span>
+  </nav>
+
+  <section class="grid" id="grid" aria-label="Games"></section>
+</main>
+
+<footer class="foot"><p data-t="footer"></p></footer>
+
+<!-- Slide-out Dossier Drawer: Trophies / Run Log / Global Leaderboard -->
+<div class="drawer-scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden>
+  <header class="drawer-head">
+    <h2 id="drawerTitle" data-t="drawerTitle"></h2>
+    <button type="button" class="hud-btn" id="drawerClose" data-t-label="close">✕</button>
   </header>
+  <div class="drawer-tabs" role="tablist">
+    <button type="button" role="tab" id="tabT" aria-selected="true" aria-controls="panelT" data-t="tabTrophies"></button>
+    <button type="button" role="tab" id="tabH" aria-selected="false" aria-controls="panelH" data-t="tabHistory"></button>
+    <button type="button" role="tab" id="tabL" aria-selected="false" aria-controls="panelL" data-t="tabLeaderboard"></button>
+  </div>
+  <div class="drawer-body">
+    <section id="panelT" role="tabpanel" aria-labelledby="tabT">
+      <p class="ach-summary" id="achSummary"></p>
+      <ul class="ach-list" id="achList"></ul>
+    </section>
+    <section id="panelH" role="tabpanel" aria-labelledby="tabH" hidden>
+      <ul class="runs" id="runList"></ul>
+    </section>
+    <section id="panelL" role="tabpanel" aria-labelledby="tabL" hidden>
+      <div class="lb-head">
+        <span class="lb-sync" id="lbSyncBadge"><i class="sync-dot"></i><span id="lbSyncText"></span></span>
+        <button type="button" class="hud-btn lb-refresh" id="lbRefreshBtn" data-t-label="lbRefresh">↻</button>
+      </div>
+      <div class="lb-filters" id="lbFilters" role="group"></div>
+      <p class="lb-hint" id="lbGuestHint" hidden></p>
+      <ol class="lb-list" id="lbList"></ol>
+    </section>
+  </div>
+  <footer class="drawer-foot">
+    <button type="button" class="cyber-btn ghost danger" id="resetBtn"></button>
+  </footer>
+</aside>
 
-  <main class="play">
-    <div class="stage" dir="ltr">
-      <canvas id="cv" aria-label="Game board"></canvas>
-      <div id="banner" class="banner" aria-live="polite"></div>
-      <div id="toasts" class="toasts" aria-live="polite"></div>
-      <div id="paused" class="paused rtl-ui" hidden><span data-i18n="paused">Paused</span></div>
+<!-- Netrunner Access Modal (Player PIN + Homelab SSO) -->
+<div class="modal-scrim" id="authScrim" hidden></div>
+<div class="modal cyber-clip" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+  <header class="modal-head">
+    <h2 id="authTitle" data-t="authTitle">NETRUNNER ACCESS</h2>
+    <button type="button" class="hud-btn" id="authClose" data-t-label="close">✕</button>
+  </header>
+  <div class="modal-body">
+    <div class="sso-banner">
+      <span class="sso-dot" aria-hidden="true"></span>
+      <span data-t="ssoBadge">SINGLE SIGN-ON // ONE ACCOUNT ACROSS ALL HOMELAB SITES</span>
     </div>
 
-    <aside class="side rtl-ui">
-      <section class="panel">
-        <h2 data-i18n="towers">Towers</h2>
-        <div id="palette" class="palette"></div>
-      </section>
-      <section id="sel" class="panel sel" hidden></section>
-      <section class="panel">
-        <h2 data-i18n="abilities">Abilities</h2>
-        <div class="abilities">
-          <button id="ab-emp" class="ability" type="button"><span class="ab-fill"></span><span class="ab-name"></span><span class="ab-key">Q</span><span class="ab-cd"></span></button>
-          <button id="ab-overclock" class="ability" type="button"><span class="ab-fill"></span><span class="ab-name"></span><span class="ab-key">W</span><span class="ab-cd"></span></button>
+    <div id="authActiveView" class="auth-active" hidden>
+      <p class="auth-kicker" data-t="authSignedInAs"></p>
+      <div class="auth-card cyber-clip-sm" id="authCard">
+        <span class="auth-card-av" id="authCardAvatar" aria-hidden="true">◈</span>
+        <div class="auth-card-info">
+          <div class="auth-card-title">
+            <strong class="auth-card-handle" id="authCardHandle"></strong>
+            <span class="auth-role-pill" id="authCardRole"></span>
+          </div>
+          <span class="auth-card-meta" id="authCardMeta"></span>
+          <span class="auth-card-expiry" id="authCardExpiry" hidden></span>
         </div>
-      </section>
-      <button id="b-send" class="send" type="button"><span id="send-label"></span><span id="send-sub" class="sub"></span></button>
-    </aside>
-  </main>
-
-  <!-- start / map select -->
-  <div id="menu" class="overlay rtl-ui" role="dialog" aria-modal="true" aria-labelledby="menu-title">
-    <div class="card menu-card">
-      <div class="menu-head">
-        <h2 id="menu-title" class="big" data-i18n="title">Homelab Defender</h2>
-        <p class="lede" data-i18n="tagline">Stop the malware before it reaches your server rack.</p>
+        <span class="auth-sync-pill" id="authCardSync"></span>
       </div>
-      <div class="seg" role="group">
-        <button id="m-campaign" type="button" class="on" data-i18n="campaign">Campaign (20 waves)</button>
-        <button id="m-endless" type="button" data-i18n="endless">Endless</button>
-      </div>
-      <h3 class="sub-h" data-i18n="pickMap">Choose a network</h3>
-      <div id="maps" class="maps"></div>
-      <p class="how" data-i18n="how"></p>
-      <p class="keys" data-i18n="keys"></p>
-      <details class="badges-box">
-        <summary><span data-i18n="badges">Badges</span> <span id="badge-count" class="muted"></span></summary>
-        <ul id="badge-list" class="badge-list"></ul>
-      </details>
-    </div>
-  </div>
-
-  <!-- end of run -->
-  <div id="end" class="overlay rtl-ui" role="dialog" aria-modal="true" aria-labelledby="end-title" hidden>
-    <div class="card end-card">
-      <h2 id="end-title" class="big"></h2>
-      <p id="end-text" class="lede"></p>
-      <div class="final"><span data-i18n="finalScore">Final score</span><b id="end-score"></b></div>
-      <p id="end-best" class="muted"></p>
-      <ul id="end-badges" class="badge-list"></ul>
-      <div class="actions">
-        <button id="e-endless" type="button" class="btn primary" data-i18n="keepGoing" hidden>Go endless</button>
-        <button id="e-again" type="button" class="btn primary" data-i18n="again">Play again</button>
-        <button id="e-menu" type="button" class="btn" data-i18n="menu">Menu</button>
+      <a class="cyber-btn big auth-dash-btn" id="authDashboardBtn" href="/" data-t="authOpenDashboard" hidden>◢ OPEN DASHBOARD</a>
+      <div class="auth-active-actions">
+        <button type="button" class="cyber-btn ghost" id="authSwitchBtn" data-t="authSwitch"></button>
+        <button type="button" class="cyber-btn ghost danger" id="authSignOutBtn" data-t="authSignOut"></button>
       </div>
     </div>
-  </div>
 
+    <div id="authSignInView" class="auth-signin-view">
+      <div class="auth-tabs" role="tablist" id="authModeTabs">
+        <button type="button" role="tab" class="auth-tab cyber-clip-sm" id="tabAuthPin" data-auth-mode="pin" aria-selected="true" aria-controls="authForm" data-t="authTabPin">PLAYER PIN</button>
+        <button type="button" role="tab" class="auth-tab cyber-clip-sm" id="tabAuthSso" data-auth-mode="sso" aria-selected="false" aria-controls="authSsoForm" data-t="authTabSso">HOMELAB SSO</button>
+      </div>
+
+      <p class="auth-error" id="authError" role="alert" hidden></p>
+
+      <form id="authForm" class="auth-form" role="tabpanel" aria-labelledby="tabAuthPin" novalidate>
+        <p class="auth-sub" data-t="authSubtitle"></p>
+        <label class="field">
+          <span data-t="handleLabel">NETRUNNER HANDLE</span>
+          <input type="text" id="authHandle" name="handle" minlength="2" maxlength="20" autocomplete="username" required>
+        </label>
+        <label class="field">
+          <span data-t="pinLabel">SECURITY PIN (4–8 DIGITS)</span>
+          <input type="password" id="authPin" name="pin" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" autocomplete="current-password" required>
+        </label>
+        <fieldset class="avatar-picker">
+          <legend data-t="avatarLabel">CLASS RIG</legend>
+          <div class="avatar-grid" id="avatarGrid" role="radiogroup">
+            <button type="button" role="radio" class="av-opt cyber-clip-sm" data-avatar="netrunner" aria-checked="true">
+              <span class="av-glyph" aria-hidden="true">◈</span>
+              <span class="av-name" data-t="avatars.netrunner">NETRUNNER</span>
+            </button>
+            <button type="button" role="radio" class="av-opt cyber-clip-sm" data-avatar="solo" aria-checked="false">
+              <span class="av-glyph" aria-hidden="true">⚔</span>
+              <span class="av-name" data-t="avatars.solo">SOLO</span>
+            </button>
+            <button type="button" role="radio" class="av-opt cyber-clip-sm" data-avatar="techie" aria-checked="false">
+              <span class="av-glyph" aria-hidden="true">⚙</span>
+              <span class="av-name" data-t="avatars.techie">TECHIE</span>
+            </button>
+            <button type="button" role="radio" class="av-opt cyber-clip-sm" data-avatar="corpo" aria-checked="false">
+              <span class="av-glyph" aria-hidden="true">❖</span>
+              <span class="av-name" data-t="avatars.corpo">CORPO</span>
+            </button>
+          </div>
+        </fieldset>
+        <button type="submit" class="cyber-btn big auth-submit" id="authSubmitBtn" data-t="authSubmit"></button>
+      </form>
+
+      <form id="authSsoForm" class="auth-form" role="tabpanel" aria-labelledby="tabAuthSso" novalidate hidden>
+        <p class="auth-sub" data-t="authSsoSubtitle"></p>
+        <label class="field">
+          <span data-t="ssoUserLabel">HOMELAB USERNAME</span>
+          <input type="text" id="authSsoUser" name="username" autocomplete="username" required>
+        </label>
+        <label class="field">
+          <span data-t="ssoPassLabel">PASSWORD</span>
+          <input type="password" id="authSsoPass" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="cyber-btn big auth-sso-submit" id="authSsoSubmitBtn" data-t="authSsoSubmit"></button>
+      </form>
+    </div>
+  </div>
 </div>
-<noscript><p style="padding:2rem;color:#eef0f6">Homelab Defender needs JavaScript.</p></noscript>
-<script type="module" src="js/main.js"></script>
+
+<div class="jack-overlay" id="jackOverlay" aria-hidden="true"><span id="jackText"></span></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
