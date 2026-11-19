@@ -7,6 +7,7 @@ import {
   ARENA, CHRONO_DURATION, CHRONO_COOLDOWN, CHRONO_SLOW, CHRONO_BOOST, BOSS_INTERVAL, WEAPONS, WEAPON_IDS,
   PASSIVE_IDS, MAX_ITEM_LEVEL, PLAYER_BASE_SPEED, PLAYER_BASE_PICKUP, ENEMIES,
 } from './js/engine.js';
+import { serializeState, deserializeState } from './js/main.js';
 
 const DT = 1 / 60;
 const run = (s, secs, input = {}) => { const n = Math.round(secs / DT); for (let i = 0; i < n; i++) step(s, DT, input); return s; };
@@ -78,7 +79,9 @@ test('monowire, nova and orbital blades damage nearby enemies; nova slows', () =
   }
 });
 
-test('swarm micro-daemons explode with area damage', () => {
+test('swarm micro-daemons explode with area damage and Lv1 stats are responsive', () => {
+  assert.equal(WEAPONS.swarm.levels[0].cd, 1.9);
+  assert.equal(WEAPONS.swarm.levels[0].dmg, 20);
   const s = quiet({ weapons: ['swarm'] });
   const a = spawnEnemy(s, 'juggernaut', 250, 0); a.speed = 0;
   const b = spawnEnemy(s, 'juggernaut', 280, 20); b.speed = 0;
@@ -218,12 +221,13 @@ test('chronoshift via input flag and cooler passive shortens cooldown', () => {
   assert.ok(s.chrono.cd < CHRONO_COOLDOWN * 0.9);
 });
 
-test('boss spawns every 90 seconds and fires radial bursts', () => {
+test('boss spawns every 90 seconds, defers while campaign boss is alive, and fires radial bursts', () => {
   const s = quiet({ weapons: [] });
   s.time = BOSS_INTERVAL - 0.01;
   step(s, DT);
   const b = activeBoss(s);
   assert.ok(b, 'boss present');
+  assert.equal(b.isBoss, true);
   assert.equal(s.nextBossAt, BOSS_INTERVAL * 2);
   assert.ok(drainEvents(s).some(e => e.type === 'boss'));
   b.cd = 0;
@@ -233,6 +237,30 @@ test('boss spawns every 90 seconds and fires radial bursts', () => {
   const n = s.enemies.length;
   step(s, DT);
   assert.ok(s.enemies.length > n, 'summoned minions');
+
+  // While campaign boss is alive, reaching the next 90s mark defers spawning a second boss
+  s.time = BOSS_INTERVAL * 2 + 1;
+  step(s, DT);
+  assert.equal(s.bossesSpawned, 1, 'did not overlap second boss while first is alive');
+  damageEnemy(s, b, 1e9, 0, 0);
+  step(s, DT);
+  assert.equal(s.bossesSpawned, 2, 'second boss spawns once first boss is defeated');
+});
+
+test('orbital blades tick hit cooldown at real dt during Sandevistan and serializeState persists recordedTotals', () => {
+  const s = quiet({ weapons: ['orbital'] });
+  const e = spawnEnemy(s, 'juggernaut', 78, 0);
+  e.speed = 0;
+  e.bladeT = 0.38;
+  assert.ok(activateChrono(s));
+  step(s, DT);
+  assert.ok(Math.abs(e.bladeT - (0.38 - DT)) < 1e-6, 'bladeT ticked by real dt, not slowed edt');
+
+  s.recordedTotals = { eddies: 140, xp: 520, wonRecorded: true };
+  const raw = serializeState(s);
+  assert.deepEqual(raw.recordedTotals, { eddies: 140, xp: 520, wonRecorded: true });
+  const restored = deserializeState(raw);
+  assert.deepEqual(restored.recordedTotals, { eddies: 140, xp: 520, wonRecorded: true });
 });
 
 test('victory after the 3rd boss falls, then continue endless', () => {

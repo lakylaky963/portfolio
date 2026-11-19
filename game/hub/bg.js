@@ -4,10 +4,57 @@ export function startBackground(canvas) {
   const reduce = globalThis.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   let w = 0, h = 0, dpr = 1, raf = 0, running = true;
   let skyline = [], drops = [];
+  const offscreen = document.createElement('canvas');
+  const offCtx = offscreen.getContext('2d');
   const css = () => getComputedStyle(document.documentElement);
   let accent = '#fcee09', accent2 = '#00f0ff';
 
   function readColors() { const s = css(); accent = s.getPropertyValue('--accent').trim() || accent; accent2 = s.getPropertyValue('--accent-2').trim() || accent2; }
+
+  function buildStaticCache() {
+    if (!w || !h) return;
+    offscreen.width = canvas.width;
+    offscreen.height = canvas.height;
+    offCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const hor = h * 0.62;
+    offCtx.clearRect(0, 0, w, h);
+    // Sky
+    const sky = offCtx.createLinearGradient(0, 0, 0, hor);
+    sky.addColorStop(0, '#05060a'); sky.addColorStop(0.7, '#0a0b16'); sky.addColorStop(1, '#1a0d1f');
+    offCtx.fillStyle = sky; offCtx.fillRect(0, 0, w, hor);
+    // Floor
+    const floor = offCtx.createLinearGradient(0, hor, 0, h);
+    floor.addColorStop(0, '#0d0816'); floor.addColorStop(1, '#05060a');
+    offCtx.fillStyle = floor; offCtx.fillRect(0, hor, w, h - hor);
+    // Horizon glow
+    const glow = offCtx.createRadialGradient(w / 2, hor, 0, w / 2, hor, Math.max(w, h) * 0.6);
+    glow.addColorStop(0, hexA(accent, 0.28)); glow.addColorStop(0.35, hexA('#ff003c', 0.08)); glow.addColorStop(1, 'transparent');
+    offCtx.fillStyle = glow; offCtx.fillRect(0, 0, w, h);
+    // Skyline buildings + static windows
+    offCtx.fillStyle = '#06070c';
+    for (const b of skyline) {
+      offCtx.fillRect(b.x, hor - b.h, b.w, b.h);
+      if (b.spire) offCtx.fillRect(b.x + b.w / 2 - 1, hor - b.h - 24, 2, 24);
+    }
+    for (const b of skyline) {
+      for (const [lx, ly, hot] of b.lights) {
+        offCtx.fillStyle = hot ? hexA(accent2, 0.3) : 'rgba(255,200,120,.10)';
+        offCtx.fillRect(b.x + lx, hor - b.h + ly, 2, 2);
+      }
+    }
+    // Static radial perspective lines on floor
+    offCtx.save();
+    offCtx.beginPath(); offCtx.rect(0, hor, w, h - hor); offCtx.clip();
+    offCtx.lineWidth = 1;
+    const vx = w / 2;
+    offCtx.strokeStyle = hexA(accent, 0.22);
+    offCtx.beginPath();
+    for (let i = -24; i <= 24; i++) { const x = vx + i * (w / 14); offCtx.moveTo(vx + i * 6, hor); offCtx.lineTo(x * 1 + (x - vx) * 2, h); }
+    offCtx.stroke();
+    offCtx.restore();
+    // Horizon line
+    offCtx.fillStyle = hexA(accent, 0.8); offCtx.fillRect(0, hor - 1, w, 1.5);
+  }
 
   function resize() {
     dpr = Math.min(2, globalThis.devicePixelRatio || 1);
@@ -25,47 +72,21 @@ export function startBackground(canvas) {
     }
     const n = Math.round((w * h) / 26000);
     drops = Array.from({ length: n }, () => newDrop(true));
+    buildStaticCache();
   }
   function newDrop(any) {
     return { x: Math.random() * w, y: any ? Math.random() * h : -40, v: 60 + Math.random() * 160, len: 8 + Math.random() * 28, a: 0.08 + Math.random() * 0.25, c: Math.random() < 0.7 ? 1 : 2 };
   }
 
   function frame(now) {
+    raf = 0;
     const t = now / 1000;
     const hor = h * 0.62;
-    ctx.clearRect(0, 0, w, h);
-    // Sky
-    const sky = ctx.createLinearGradient(0, 0, 0, hor);
-    sky.addColorStop(0, '#05060a'); sky.addColorStop(0.7, '#0a0b16'); sky.addColorStop(1, '#1a0d1f');
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hor);
-    // Horizon glow
-    const glow = ctx.createRadialGradient(w / 2, hor, 0, w / 2, hor, Math.max(w, h) * 0.6);
-    glow.addColorStop(0, hexA(accent, 0.28)); glow.addColorStop(0.35, hexA('#ff003c', 0.08)); glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
-    // Skyline
-    ctx.fillStyle = '#06070c';
-    for (const b of skyline) {
-      ctx.fillRect(b.x, hor - b.h, b.w, b.h);
-      if (b.spire) ctx.fillRect(b.x + b.w / 2 - 1, hor - b.h - 24, 2, 24);
-    }
-    for (const b of skyline) for (const [lx, ly, hot] of b.lights) {
-      const flick = hot ? 0.5 + 0.5 * Math.sin(t * 3 + lx) : 0.55;
-      ctx.fillStyle = hot ? hexA(accent2, 0.35 * flick) : 'rgba(255,200,120,.10)';
-      ctx.fillRect(b.x + lx, hor - b.h + ly, 2, 2);
-    }
-    // Floor
-    const floor = ctx.createLinearGradient(0, hor, 0, h);
-    floor.addColorStop(0, '#0d0816'); floor.addColorStop(1, '#05060a');
-    ctx.fillStyle = floor; ctx.fillRect(0, hor, w, h - hor);
-    // Perspective grid
+    ctx.drawImage(offscreen, 0, 0, w, h);
+    // Animated perspective floor lines
     ctx.save();
     ctx.beginPath(); ctx.rect(0, hor, w, h - hor); ctx.clip();
     ctx.lineWidth = 1;
-    const vx = w / 2;
-    ctx.strokeStyle = hexA(accent, 0.22);
-    ctx.beginPath();
-    for (let i = -24; i <= 24; i++) { const x = vx + i * (w / 14); ctx.moveTo(vx + i * 6, hor); ctx.lineTo(x * 1 + (x - vx) * 2, h); }
-    ctx.stroke();
     const speed = reduce ? 0 : 0.35;
     const off = (t * speed) % 1;
     for (let i = 0; i < 18; i++) {
@@ -74,8 +95,6 @@ export function startBackground(canvas) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
     ctx.restore();
-    // Horizon line
-    ctx.fillStyle = hexA(accent, 0.8); ctx.fillRect(0, hor - 1, w, 1.5);
     // Data rain
     if (!reduce) {
       const dt = Math.min(0.05, (now - (frame.last || now)) / 1000);
@@ -92,17 +111,26 @@ export function startBackground(canvas) {
     const v = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75);
     v.addColorStop(0, 'transparent'); v.addColorStop(1, 'rgba(0,0,0,.65)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, w, h);
-    if (running && !reduce) raf = requestAnimationFrame(frame);
+    if (running && !reduce && !document.hidden) raf = requestAnimationFrame(frame);
   }
 
   readColors(); resize();
   addEventListener('resize', () => { resize(); if (reduce) frame(performance.now()); });
   document.addEventListener('visibilitychange', () => {
     if (reduce) return;
-    if (document.hidden) { running = false; cancelAnimationFrame(raf); } else if (!running) { running = true; frame.last = 0; raf = requestAnimationFrame(frame); }
+    if (document.hidden) {
+      running = false;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    } else if (!running) {
+      running = true;
+      frame.last = 0;
+      if (!raf) raf = requestAnimationFrame(frame);
+    }
   });
-  raf = requestAnimationFrame(frame);
-  return { refresh() { readColors(); if (reduce) frame(performance.now()); } };
+  if (reduce) frame(performance.now());
+  else if (!document.hidden) raf = requestAnimationFrame(frame);
+  return { refresh() { readColors(); buildStaticCache(); if (reduce) frame(performance.now()); } };
 }
 
 export function hexA(hex, a) {

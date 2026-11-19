@@ -40,21 +40,21 @@ export const GAMES_META = Object.freeze([
     titleEn: 'Blackwall Defense', titleHe: 'הגנת החומה השחורה',
     tagEn: 'ORBITAL COMMAND', tagHe: 'פיקוד מסלולי',
     descEn: 'Intercept rogue AI missile salvos above Night City. Upgrade railguns, flak & city shields.',
-    descHe: 'יירטו מטחי טילים של בינה מלאכותית סוררת מעל העיר. שדרגו רובי רייל, נ״מ ומגיני עיר.',
+    descHe: 'יירטו מטחי טילים של בינה מלאכותית סוררת מעל העיר. שדרגו תותחי רייל, נ״מ ומגיני עיר.',
   },
   {
     id: 'neonvector', path: 'neonvector/', accent: '#d946ef', genre: 'action', key: '4',
     titleEn: 'Neon Vector 2077', titleHe: 'ניאון וקטור 2077',
     tagEn: 'CYBERSPACE SHMUP', tagHe: 'יריות בסייברספייס',
     descEn: 'High-speed synthwave bullet-hell. Graze plasma for Overdrive and dismantle megacorp bosses.',
-    descHe: 'מטח קליעים סינת׳ווייב מהיר. התחככו בפלזמה לטעינת אוברדרייב ופרקו בוסים של מגה-תאגידים.',
+    descHe: 'מטח קליעים סינת׳ווייב מהיר. חלפו קרוב לפלזמה לטעינת אוברדרייב ופרקו בוסים של מגה-תאגידים.',
   },
   {
     id: 'protocol', path: 'protocol/', accent: '#00ff9f', genre: 'hacking', key: '5',
     titleEn: 'Breach Protocol', titleHe: 'פרוטוקול פריצה',
     tagEn: 'HEX MATRIX HACK', tagHe: 'פריצת מטריצת הקס',
     descEn: 'Iconic row/column hex-matrix hacking roguelike. Chain Daemons before the ICE timer hits zero.',
-    descHe: 'רוגלייק פריצה במטריצת הקס של שורות ועמודות. שרשרו דמונים לפני שטיימר ה-ICE מתאפס.',
+    descHe: 'רוגלייק פריצה במטריצת הקס של שורות ועמודות. שרשרו רצפי דמונים לפני שטיימר ה-ICE מתאפס.',
   },
   {
     id: 'overclock', path: 'overclock/', accent: '#ffaa00', genre: 'action', key: '6',
@@ -1076,8 +1076,8 @@ export function installAutoPause({
       gap: '10px',
       padding: '10px 16px',
       background: 'rgba(10, 14, 24, 0.94)',
-      color: '#00f0ff',
-      border: '1px solid #00f0ff',
+      color: 'var(--accent-2, #00f0ff)',
+      border: '1px solid var(--accent-2, #00f0ff)',
       boxShadow: '0 0 22px rgba(0, 240, 255, 0.35), 0 8px 28px rgba(0, 0, 0, 0.6)',
       fontFamily: "var(--mono, 'Plex Mono', ui-monospace, monospace)",
       fontSize: '12px',
@@ -1107,7 +1107,7 @@ export function installAutoPause({
     Object.assign(closeBtn.style, {
       background: 'transparent',
       border: '0',
-      color: '#fcee09',
+      color: 'var(--accent, #fcee09)',
       fontWeight: '700',
       cursor: 'pointer',
       padding: '0 2px',
@@ -1215,6 +1215,7 @@ export function setMuted(m) { return updateSettings({ muted: !!m }).muted; }
 export function getTheme() { return getProfile().settings.theme; }
 export function setTheme(t) { return updateSettings({ theme: THEMES.includes(t) ? t : 'yellow' }).theme; }
 export function nextTheme(t) { return THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]; }
+export function prevTheme(t) { const i = THEMES.indexOf(t); return THEMES[(i <= 0 ? THEMES.length : i) - 1]; }
 
 export function getGame(id) { return GAMES_META.find((g) => g.id === id) || null; }
 

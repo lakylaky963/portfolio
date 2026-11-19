@@ -12,7 +12,7 @@ html, body {
 .app {
   display: flex; flex-direction: column;
   width: 100vw; height: 100dvh; overflow: hidden;
-  background: radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08), transparent 55%), var(--bg);
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent-2) 8%, transparent), transparent 55%), var(--bg);
 }
 
 /* ==================== TOP HUD BAR ==================== */
@@ -21,14 +21,14 @@ html, body {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 8px 14px;
   background: linear-gradient(180deg, rgba(14, 16, 25, 0.98), rgba(9, 11, 18, 0.95));
-  border-bottom: 1px solid rgba(0, 240, 255, 0.28);
-  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.55), 0 0 18px color-mix(in srgb, var(--accent) 14%, transparent);
   flex-shrink: 0;
 }
 
 .hud::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan) 22%, var(--yellow) 52%, var(--magenta) 82%, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-2) 22%, var(--accent) 52%, var(--magenta) 82%, transparent);
   opacity: 0.6; pointer-events: none;
 }
 
@@ -37,21 +37,22 @@ html, body {
 }
 
 .hub-link {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; min-width: 44px;
   padding: 6px 11px; text-decoration: none;
   font: 600 0.74rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--bg); background: var(--yellow);
+  color: var(--accent-ink); background: var(--accent);
   white-space: nowrap; flex-shrink: 0;
   transition: filter 0.15s var(--ease), transform 0.15s var(--ease);
 }
-.hub-link:hover { filter: brightness(1.12) drop-shadow(0 0 10px rgba(252, 238, 9, 0.6)); }
+.hub-link:hover { filter: brightness(1.12) drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 60%, transparent)); }
 .hub-link:active { transform: translateY(1px); }
 .hub-glyph { font-size: 0.85em; }
 
 .brand { display: flex; align-items: center; gap: 8px; }
 .brand-title {
   font: 700 0.92rem/1 var(--mono); letter-spacing: 0.16em;
-  color: var(--cyan); text-shadow: 0 0 12px rgba(0, 240, 255, 0.45);
+  color: var(--accent); text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent);
   white-space: nowrap;
 }
 .wave-pill {
@@ -125,7 +126,8 @@ html, body {
 
 /* HUD Action Buttons */
 .hud-btn {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 44px; min-width: 44px;
   padding: 6px 10px; border: 0; cursor: pointer;
   font: 600 0.72rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--text); background: var(--raised);
@@ -134,12 +136,12 @@ html, body {
   white-space: nowrap;
 }
 .hud-btn:hover:not(:disabled) {
-  background: rgba(0, 240, 255, 0.14); color: var(--cyan);
-  box-shadow: inset 0 0 0 1px var(--cyan);
+  background: color-mix(in srgb, var(--accent-2) 14%, transparent); color: var(--accent-2);
+  box-shadow: inset 0 0 0 1px var(--accent-2);
 }
 .hud-btn.active {
-  background: rgba(252, 238, 9, 0.18); color: var(--yellow);
-  box-shadow: inset 0 0 0 1px var(--yellow);
+  background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 .hud-btn:disabled { opacity: 0.38; cursor: not-allowed; }
 .btn-ico { font-size: 0.82rem; line-height: 1; }
@@ -203,12 +205,13 @@ html, body {
 /* Alert Banner */
 .banner {
   position: absolute; top: 82px; left: 50%; transform: translateX(-50%);
-  z-index: 16; padding: 8px 20px; pointer-events: none;
-  font: 700 0.85rem/1.1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase;
+  z-index: 16; padding: 6px 12px; pointer-events: none;
+  max-width: calc(100% - 24px);
+  font: 700 clamp(.68rem, 2.8vw, .85rem)/1.2 var(--mono); letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--yellow); background: rgba(14, 16, 25, 0.92);
   border: 1px solid var(--yellow);
   box-shadow: 0 0 24px rgba(252, 238, 9, 0.35);
-  white-space: nowrap; text-align: center;
+  white-space: normal; text-align: center;
   animation: bannerIn 0.25s var(--ease);
 }
 .banner.danger {
@@ -313,7 +316,7 @@ html, body {
 .chrono-btn.active .chrono-bolt { color: var(--yellow); text-shadow: 0 0 12px var(--yellow); }
 .chrono-btn.cooling .chrono-bolt { color: var(--muted); text-shadow: none; }
 
-.chrono-info { display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: left; }
+.chrono-info { display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: start; }
 .chrono-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .chrono-name { font: 700 0.74rem/1 var(--mono); letter-spacing: 0.12em; color: var(--text); }
 .chrono-key {
@@ -353,30 +356,30 @@ html, body {
   position: relative; width: min(560px, 100%); max-height: calc(100dvh - 36px);
   overflow-y: auto; padding: 26px 28px;
   background: linear-gradient(165deg, rgba(16, 19, 31, 0.98), rgba(9, 11, 18, 0.98));
-  border: 1px solid rgba(0, 240, 255, 0.42);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75), 0 0 36px rgba(0, 240, 255, 0.15);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75), 0 0 36px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .panel-eyebrow {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   font: 700 0.72rem/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--cyan); margin-bottom: 10px;
+  color: var(--accent-2); margin-bottom: 10px;
 }
 .dot {
-  width: 8px; height: 8px; background: var(--cyan);
-  box-shadow: 0 0 10px var(--cyan);
+  width: 8px; height: 8px; background: var(--accent-2);
+  box-shadow: 0 0 10px var(--accent-2);
 }
-.dot.yellow { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+.dot.yellow { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 .eyebrow-best {
   margin-inline-start: auto; padding: 4px 9px;
-  background: rgba(252, 238, 9, 0.12); border: 1px solid rgba(252, 238, 9, 0.4);
-  color: var(--yellow); font-size: 0.7rem;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent); font-size: 0.7rem;
 }
 
 .hero-title {
   margin: 0 0 8px; font: 700 clamp(2rem, 5vw, 2.9rem)/1 var(--mono);
-  letter-spacing: 0.14em; color: var(--yellow);
-  text-shadow: 0 0 26px rgba(252, 238, 9, 0.4), 2px 0 0 rgba(0, 240, 255, 0.65);
+  letter-spacing: 0.14em; color: var(--accent);
+  text-shadow: 0 0 26px color-mix(in srgb, var(--accent) 40%, transparent), 2px 0 0 color-mix(in srgb, var(--accent-2) 65%, transparent);
 }
 .hero-tagline {
   margin: 0 0 22px; color: var(--text-2); font-size: 0.96rem; line-height: 1.5;
@@ -385,10 +388,10 @@ html, body {
 .start-actions { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
 .start-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .primary-jack {
-  flex: 1 1 180px; --c: var(--yellow); padding: 14px 20px; font-size: 0.94rem;
+  flex: 1 1 180px; --c: var(--accent); color: var(--accent-ink); padding: 14px 20px; font-size: 0.94rem;
 }
 .endless-toggle {
-  flex: 1 1 170px; --c: var(--cyan); padding: 12px 14px; font-size: 0.76rem;
+  flex: 1 1 170px; --c: var(--accent-2); padding: 12px 14px; font-size: 0.76rem;
 }
 .endless-toggle[aria-pressed="true"] {
   --c: var(--magenta); background: rgba(255, 0, 60, 0.18); color: #ff5580;
@@ -396,7 +399,7 @@ html, body {
 }
 
 .resume-glow-btn {
-  width: 100%; --c: var(--ok); color: var(--bg);
+  width: 100%; --c: var(--ok); color: #07080d;
   flex-direction: column; gap: 4px; padding: 13px 18px;
   box-shadow: 0 0 26px rgba(0, 255, 159, 0.45);
   animation: resumePulse 1.8s ease-in-out infinite;
@@ -425,8 +428,8 @@ html, body {
 /* ==================== RIPPERDOC DRAFT MODAL ==================== */
 .draft-panel {
   width: min(860px, 100%);
-  border-color: rgba(252, 238, 9, 0.55);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(252, 238, 9, 0.16);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 40px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .draft-header {
   display: flex; align-items: flex-end; justify-content: space-between;
@@ -434,13 +437,13 @@ html, body {
 }
 .modal-title {
   margin: 0 0 4px; font: 700 1.45rem/1.1 var(--mono);
-  letter-spacing: 0.14em; color: var(--yellow); text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--accent); text-transform: uppercase;
 }
 .modal-sub { margin: 0; color: var(--text-2); font-size: 0.88rem; }
 .draft-hint {
   font: 600 0.72rem/1 var(--mono); letter-spacing: 0.08em;
-  color: var(--cyan); padding: 6px 10px;
-  background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3);
+  color: var(--accent-2); padding: 6px 10px;
+  background: color-mix(in srgb, var(--accent-2) 8%, transparent); border: 1px solid color-mix(in srgb, var(--accent-2) 30%, transparent);
 }
 .pending-badge {
   padding: 2px 7px; background: var(--magenta); color: #fff;
@@ -452,7 +455,7 @@ html, body {
 }
 
 .draft-card {
-  --rc: var(--cyan);
+  --rc: var(--accent-2);
   position: relative; display: flex; flex-direction: column; gap: 10px;
   padding: 18px 16px 16px; border: 0; text-align: start; cursor: pointer;
   color: var(--text);
@@ -464,8 +467,8 @@ html, body {
 .draft-card:hover, .draft-card:focus-visible {
   transform: translateY(-4px);
   background: linear-gradient(175deg, rgba(28, 34, 54, 0.98), rgba(14, 17, 29, 0.99));
-  box-shadow: inset 0 0 0 1px var(--rc), inset 0 4px 0 0 var(--rc),
-              0 12px 30px color-mix(in srgb, var(--rc) 25%, transparent);
+  box-shadow: inset 0 0 0 1px var(--accent), inset 0 4px 0 0 var(--rc),
+              0 12px 30px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .draft-card[data-rarity="common"]    { --rc: #9ba3be; }
 .draft-card[data-rarity="uncommon"]  { --rc: #00ff9f; }
@@ -503,7 +506,7 @@ html, body {
   background: rgba(255, 255, 255, 0.08); color: var(--rc);
   border: 1px solid color-mix(in srgb, var(--rc) 50%, transparent);
 }
-.card-lvl-pill.new { background: var(--yellow); color: var(--bg); border-color: var(--yellow); }
+.card-lvl-pill.new { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .card-desc {
   margin: 2px 0 0; font-size: 0.84rem; line-height: 1.45; color: var(--text-2);
   flex: 1;
@@ -538,8 +541,8 @@ html, body {
 /* ==================== END OF RUN MODAL ==================== */
 .end-panel { width: min(560px, 100%); }
 .end-panel.victory {
-  border-color: var(--yellow);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 42px rgba(252, 238, 9, 0.25);
+  border-color: var(--accent);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 42px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .end-panel.defeat {
   border-color: var(--magenta);
@@ -551,7 +554,7 @@ html, body {
 .new-best-pill {
   display: inline-block; margin-bottom: 8px; padding: 4px 12px;
   font: 700 0.7rem/1 var(--mono); letter-spacing: 0.14em;
-  color: var(--bg); background: var(--yellow);
+  color: var(--accent-ink); background: var(--accent);
 }
 
 .end-stats-grid {
@@ -593,7 +596,37 @@ html, body {
 
 .end-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .end-actions .cyber-btn { flex: 1 1 140px; padding: 12px 14px; }
-.endless-go { --c: var(--cyan); flex-basis: 100%; }
+.endless-go { --c: var(--accent-2); color: #07080d; flex-basis: 100%; }
+
+/* ==================== HEBREW / RTL TYPOGRAPHY ==================== */
+:root[lang="he"] .hub-link,
+:root[lang="he"] .brand-title,
+:root[lang="he"] .wave-pill,
+:root[lang="he"] .meter-head,
+:root[lang="he"] .stat-k,
+:root[lang="he"] .hud-btn,
+:root[lang="he"] .boss-head,
+:root[lang="he"] .banner,
+:root[lang="he"] .slot-lv,
+:root[lang="he"] .chrono-name,
+:root[lang="he"] .chrono-status,
+:root[lang="he"] .panel-eyebrow,
+:root[lang="he"] .hero-title,
+:root[lang="he"] .resume-meta,
+:root[lang="he"] .modal-title,
+:root[lang="he"] .draft-hint,
+:root[lang="he"] .card-rarity,
+:root[lang="he"] .card-lvl-pill,
+:root[lang="he"] .auto-pause-pill,
+:root[lang="he"] .new-best-pill,
+:root[lang="he"] .end-stat span,
+:root[lang="he"] .payout-lbl,
+:root[lang="he"] .badges-title,
+:root[lang="he"] .badge-chip,
+:root[lang="he"] .sync-note,
+:root[lang="he"] .cyber-btn {
+  letter-spacing: 0 !important;
+}
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 1020px) {

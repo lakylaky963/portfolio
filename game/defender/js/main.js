@@ -37,7 +37,9 @@ let selected = null, build = null, hover = null;
 let scores = store.get('hd.scores', {});
 let badges = store.get('hd.badges', []);
 let runBadges = [];
+let recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
 let runRecorded = { done: false, won: false, score: 0, eddies: 0, xp: 0, badges: new Set() };
+let lastEndFresh = [];
 let committed = true;
 let last = performance.now(), clock = 0, hudT = 0;
 
@@ -56,6 +58,7 @@ function setLang(l, syncHub = true) {
   $('b-lang').textContent = t('lang');
   $('back-portfolio').href = l === 'he' ? '/portfolio/he/' : '/portfolio/';
   buildPalette(); buildMaps(); buildBadgeList($('badge-list'), []); refreshStatic(); refreshResumeBtn(); lastSel = ''; lastHud = {};
+  if (!$('end').hidden && game) renderEndModal(lastEndFresh);
 }
 
 // ------------------------------------------------------------------ small DOM helpers
@@ -81,7 +84,7 @@ function buildPalette() {
     b.innerHTML = '<canvas></canvas><span><span class="nm"></span><span class="ds"></span></span><span><span class="cs"></span><span class="hk"></span></span>';
     b.querySelector('.nm').textContent = t('tower.' + k);
     b.querySelector('.ds').textContent = t('tdesc.' + k);
-    b.querySelector('.cs').textContent = E.TOWERS[k].cost;
+    b.querySelector('.cs').textContent = '€$' + E.TOWERS[k].cost;
     b.querySelector('.hk').textContent = String(i + 1);
     b.title = t('tower.' + k) + ' — ' + t('tdesc.' + k);
     b.addEventListener('click', () => { Audio.unlock(); chooseBuild(build === k ? null : k); });
@@ -162,6 +165,7 @@ function serializeDefenderState() {
     runMode,
     speed,
     runBadges: runBadges.slice(),
+    recordedTotals: { ...recordedTotals },
     runRecorded: {
       done: runRecorded.done,
       won: runRecorded.won,
@@ -225,7 +229,7 @@ function restoreDefenderState(snap) {
   g.wave = Number(sg.wave) || 0;
   g.waveTimer = sg.waveTimer === null ? Infinity : (Number.isFinite(Number(sg.waveTimer)) ? Number(sg.waveTimer) : 20);
   g.clearedWave = Number(sg.clearedWave) || 0;
-  g.lives = Number(sg.lives) || g.maxLives;
+  g.lives = sg.lives !== undefined && sg.lives !== null ? Number(sg.lives) : g.maxLives;
   g.maxLives = Number(sg.maxLives) || g.maxLives;
   g.cash = Number(sg.cash) || 0;
   g.score = Number(sg.score) || 0;
@@ -240,12 +244,19 @@ function restoreDefenderState(snap) {
   game = g;
   runBadges = Array.isArray(st.runBadges) ? st.runBadges.slice() : [];
   const rr = st.runRecorded || {};
+  const rt = st.recordedTotals || rr;
+  recordedTotals = {
+    score: Number(rt.score) || 0,
+    eddies: Number(rt.eddies) || 0,
+    xp: Number(rt.xp) || 0,
+    won: !!rt.won,
+  };
   runRecorded = {
-    done: !!rr.done,
-    won: !!rr.won,
-    score: Number(rr.score) || 0,
-    eddies: Number(rr.eddies) || 0,
-    xp: Number(rr.xp) || 0,
+    done: !!(rr.done || rt.score > 0 || rt.eddies > 0 || rt.xp > 0 || rt.won),
+    won: !!recordedTotals.won,
+    score: recordedTotals.score,
+    eddies: recordedTotals.eddies,
+    xp: recordedTotals.xp,
     badges: new Set(Array.isArray(rr.badges) ? rr.badges : []),
   };
   selected = null; build = null; paused = false;
@@ -289,7 +300,9 @@ function startGame(i, m) {
   mapIdx = i; mode = m; runMode = m;
   game = E.createGame({ map: MAPS[i], mode: m });
   runBadges = [];
+  recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
   runRecorded = { done: false, won: false, score: 0, eddies: 0, xp: 0, badges: new Set() };
+  lastEndFresh = [];
   selected = null; build = null; paused = false; speed = 1;
   $('b-speed').textContent = '1×'; $('paused').hidden = true;
   screen = 'play'; $('menu').hidden = true; $('end').hidden = true;
@@ -312,42 +325,53 @@ function mergeBadges() {
   if (fresh.length) { badges = badges.concat(fresh); store.set('hd.badges', badges); }
   return fresh;
 }
+function renderEndModal(fresh = []) {
+  const won = game.status === 'won';
+  const box = $('end'); box.className = 'overlay rtl-ui ' + (won ? 'win' : 'lose');
+  $('end-title').textContent = won ? t('victory') : t('defeat');
+  $('end-text').textContent = won ? t('victoryText') : t('defeatText') + ' ' + t('wavesReached') + ': ' + game.wave;
+  $('end-score').textContent = fmt(game.score);
+  $('end-best').textContent = game._newBest ? '★ ' + t('newBest') : '';
+  $('e-endless').hidden = !(won && runMode === 'campaign');
+  buildBadgeList($('end-badges'), fresh);
+  $('end-badges').querySelectorAll('li.locked').forEach((li) => li.remove());
+}
 function showEnd() {
   if (!game || screen !== 'play') return;
   clearMid();
   const won = game.status === 'won';
   committed = false; commitRun();
   const fresh = mergeBadges();
-  const box = $('end'); box.hidden = false; box.className = 'overlay rtl-ui ' + (won ? 'win' : 'lose');
-  $('end-title').textContent = won ? t('victory') : t('defeat');
-  $('end-text').textContent = won ? t('victoryText') : t('defeatText') + ' ' + t('wavesReached') + ': ' + game.wave;
-  $('end-score').textContent = fmt(game.score);
+  lastEndFresh = fresh;
+  const box = $('end'); box.hidden = false;
+  renderEndModal(fresh);
 
-  const totalEddies = Math.floor(game.score / 5) + (won || runRecorded.won ? 250 : 0);
+  const totalEddies = Math.floor(game.score / 5) + (won || recordedTotals.won ? 250 : 0);
   const totalXp = Math.floor(game.score / 8) + game.wave * 15;
   let grantEddies = totalEddies;
   let grantXp = totalXp;
-  if (!runRecorded.done) {
+  if (!runRecorded.done && !recordedTotals.won && recordedTotals.eddies === 0 && recordedTotals.xp === 0) {
     hub(HubSDK.recordRun, 'defender', { score: game.score, eddies: grantEddies, xp: grantXp, won, wave: game.wave, badges: runBadges });
+    recordedTotals = { score: game.score, eddies: grantEddies, xp: grantXp, won };
     runRecorded = { done: true, won, score: game.score, eddies: grantEddies, xp: grantXp, badges: new Set(runBadges) };
   } else {
-    grantEddies = Math.max(0, totalEddies - runRecorded.eddies);
-    grantXp = Math.max(0, totalXp - runRecorded.xp);
+    grantEddies = Math.max(0, totalEddies - recordedTotals.eddies);
+    grantXp = Math.max(0, totalXp - recordedTotals.xp);
     const newBadges = runBadges.filter((b) => !runRecorded.badges.has(b));
-    if (grantEddies > 0 || grantXp > 0 || newBadges.length > 0 || game.score > runRecorded.score) {
+    if (grantEddies > 0 || grantXp > 0 || newBadges.length > 0 || game.score > recordedTotals.score) {
       hub(HubSDK.recordRun, 'defender', { score: game.score, eddies: grantEddies, xp: grantXp, won: false, wave: game.wave, badges: newBadges });
-      runRecorded.eddies += grantEddies;
-      runRecorded.xp += grantXp;
-      runRecorded.score = Math.max(runRecorded.score, game.score);
+      recordedTotals.eddies += grantEddies;
+      recordedTotals.xp += grantXp;
+      recordedTotals.score = Math.max(recordedTotals.score, game.score);
+      runRecorded.done = true;
+      runRecorded.eddies = recordedTotals.eddies;
+      runRecorded.xp = recordedTotals.xp;
+      runRecorded.score = recordedTotals.score;
       newBadges.forEach((b) => runRecorded.badges.add(b));
     }
   }
   $('end-eddies').textContent = '€$' + fmt(grantEddies);
   $('end-xp').textContent = '+' + fmt(grantXp);
-  $('end-best').textContent = game._newBest ? '★ ' + t('newBest') : '';
-  $('e-endless').hidden = !(won && runMode === 'campaign');
-  buildBadgeList($('end-badges'), fresh);
-  $('end-badges').querySelectorAll('li.locked').forEach((li) => li.remove());
   document.activeElement && document.activeElement.blur();
   ($('e-endless').hidden ? $('e-again') : $('e-endless')).focus();
 }
@@ -384,31 +408,55 @@ function cycleSpeed() { speed = speed % 3 + 1; $('b-speed').textContent = speed 
 function toggleMute() { Audio.setMuted(!Audio.isMuted()); store.set('hd.mute', Audio.isMuted()); hub(HubSDK.setMuted, Audio.isMuted()); refreshStatic(); Audio.unlock(); }
 
 // ------------------------------------------------------------------ input
+let lastPointerType = 'mouse';
+let touchPreviewArmed = false;
 function pointerCell(ev) { return renderer.cellAt(ev.clientX, ev.clientY); }
 canvas.addEventListener('pointermove', (ev) => {
-  if (screen !== 'play') return;
+  if (screen !== 'play' || ev.pointerType === 'touch') return;
   const c = pointerCell(ev);
   hover = c ? { ...c, ok: cellOk(c.c, c.r).ok } : null;
 });
-canvas.addEventListener('pointerleave', () => { hover = null; });
+canvas.addEventListener('pointerleave', (ev) => {
+  if (ev.pointerType === 'touch') return;
+  hover = null;
+});
 canvas.addEventListener('pointerdown', (ev) => {
   Audio.unlock();
+  lastPointerType = ev.pointerType || 'mouse';
   if (screen !== 'play') return;
   const c = pointerCell(ev);
-  hover = c ? { ...c, ok: cellOk(c.c, c.r).ok } : null; // touch has no hover: show the ghost on press
+  if (lastPointerType === 'touch') {
+    const sameCell = !!(hover && c && hover.c === c.c && hover.r === c.r);
+    touchPreviewArmed = !sameCell;
+    hover = c ? { ...c, ok: cellOk(c.c, c.r).ok } : null;
+  } else {
+    touchPreviewArmed = false;
+    hover = c ? { ...c, ok: cellOk(c.c, c.r).ok } : null;
+  }
 });
 canvas.addEventListener('click', (ev) => {
   if (screen !== 'play' || paused || game.status !== 'running') return;
   const c = pointerCell(ev); if (!c) return;
   const tw = E.towerAt(game, c.c, c.r);
-  if (tw) { selected = tw.id; build = null; refreshPalette(); lastSel = ''; return; }
-  if (build) { tryPlace(c.c, c.r); hover = { ...c, ok: cellOk(c.c, c.r).ok }; return; }
+  if (tw) { selected = tw.id; build = null; touchPreviewArmed = false; refreshPalette(); lastSel = ''; return; }
+  if (build) {
+    const isTouch = (ev.pointerType || lastPointerType) === 'touch';
+    if (isTouch && (touchPreviewArmed || !hover || hover.c !== c.c || hover.r !== c.r)) {
+      hover = { ...c, ok: cellOk(c.c, c.r).ok };
+      touchPreviewArmed = false;
+      return;
+    }
+    tryPlace(c.c, c.r);
+    hover = { ...c, ok: cellOk(c.c, c.r).ok };
+    touchPreviewArmed = false;
+    return;
+  }
   selected = null; lastSel = '';
 });
 canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); build = null; selected = null; refreshPalette(); lastSel = ''; });
 
-$('b-pause').addEventListener('click', togglePause);
-$('p-resume').addEventListener('click', () => setPaused(false));
+$('b-pause').addEventListener('click', () => { Audio.unlock(); togglePause(); });
+$('p-resume').addEventListener('click', () => { Audio.unlock(); setPaused(false); });
 $('p-hub').addEventListener('click', saveDefenderMidRun);
 $('back').addEventListener('click', saveDefenderMidRun);
 $('m-resume').addEventListener('click', () => {
@@ -416,9 +464,9 @@ $('m-resume').addEventListener('click', () => {
   const saved = loadMid();
   if (!restoreDefenderState(saved)) { clearMid(); refreshResumeBtn(); }
 });
-$('b-speed').addEventListener('click', cycleSpeed);
+$('b-speed').addEventListener('click', () => { Audio.unlock(); if (!paused) cycleSpeed(); });
 $('b-mute').addEventListener('click', toggleMute);
-$('b-menu').addEventListener('click', () => { if (screen === 'play') openMenu(); });
+$('b-menu').addEventListener('click', () => { Audio.unlock(); if (screen === 'play') openMenu(); });
 $('b-lang').addEventListener('click', () => setLang(getLang() === 'he' ? 'en' : 'he'));
 $('b-send').addEventListener('click', () => { Audio.unlock(); if (screen === 'play' && !paused) doSend(); });
 $('ab-emp').addEventListener('click', () => { Audio.unlock(); if (screen === 'play' && !paused) E.useAbility(game, 'emp'); });
@@ -426,24 +474,33 @@ $('ab-overclock').addEventListener('click', () => { Audio.unlock(); if (screen =
 $('m-campaign').addEventListener('click', () => setMode('campaign'));
 $('m-endless').addEventListener('click', () => setMode('endless'));
 function setMode(m) { mode = m; $('m-campaign').classList.toggle('on', m === 'campaign'); $('m-endless').classList.toggle('on', m === 'endless'); buildMaps(); }
-$('e-again').addEventListener('click', () => startGame(mapIdx, runMode));
-$('e-menu').addEventListener('click', openMenu);
+$('e-again').addEventListener('click', () => { Audio.unlock(); startGame(mapIdx, runMode); });
+$('e-menu').addEventListener('click', () => { Audio.unlock(); openMenu(); });
 $('e-endless').addEventListener('click', () => {
+  Audio.unlock();
   E.continueEndless(game); runMode = 'endless'; committed = false; $('end').hidden = true;
   game._newBest = false; toast(t('endless'), 'gold');
 });
 
+const CODE_KEY = {
+  Digit1: '1', Digit2: '2', Digit3: '3', Digit4: '4', Digit5: '5',
+  KeyU: 'u', KeyS: 's', KeyT: 't', Space: ' ', KeyQ: 'q', KeyW: 'w',
+  KeyF: 'f', KeyP: 'p', KeyM: 'm', Escape: 'escape',
+};
 document.addEventListener('keydown', (ev) => {
   Audio.unlock();
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
   if (screen !== 'play' || !game || game.status !== 'running') return;
-  const k = ev.key.toLowerCase();
+  const k = CODE_KEY[ev.code] || (ev.key || '').toLowerCase();
   if (/^[1-5]$/.test(k)) { if (!paused) chooseBuild(build === E.TOWER_KEYS[k - 1] ? null : E.TOWER_KEYS[k - 1]); return; }
   switch (k) {
     case 'p': togglePause(); break;
-    case 'f': cycleSpeed(); break;
+    case 'f': if (!paused) cycleSpeed(); break;
     case 'm': toggleMute(); break;
-    case 'escape': build = null; selected = null; refreshPalette(); lastSel = ''; break;
+    case 'escape':
+      if (build || selected) { build = null; selected = null; hover = null; refreshPalette(); lastSel = ''; }
+      else if (paused) { togglePause(); }
+      break;
     case ' ': ev.preventDefault(); if (!paused) doSend(); break;
     case 'u': if (!paused) doUpgrade(); break;
     case 's': if (!paused) doSell(); break;
@@ -509,7 +566,7 @@ function updateHud() {
   const g = game;
   setText('st-lives', String(Math.ceil(g.lives)));
   $('st-lives').className = 'v ' + (g.lives / g.maxLives > 0.5 ? 'ok' : g.lives / g.maxLives > 0.25 ? 'warn' : 'bad');
-  setText('st-cash', fmt(g.cash));
+  setText('st-cash', '€$' + fmt(g.cash));
   setText('st-wave', g.endless ? String(g.wave) : `${g.wave}/${E.CAMPAIGN_WAVES}`);
   setText('st-score', fmt(g.score));
 
@@ -520,7 +577,7 @@ function updateHud() {
   if (last) setText('send-sub', '');
   else {
     const left = Math.max(0, Math.ceil(g.waveTimer)), bonus = Math.floor(g.waveTimer * (g.wave > 0 ? 1.5 : 0.5));
-    setText('send-sub', `${t('nextIn')} ${left}s` + (bonus > 0 ? `  ·  +${bonus}` : ''));
+    setText('send-sub', `${t('nextIn')} ${left}s` + (bonus > 0 ? `  ·  +€$${bonus}` : ''));
   }
 
   // abilities
@@ -546,19 +603,19 @@ function updateSelected() {
   const st = E.towerStats(x.type, x.level), nx = x.level < 3 ? E.towerStats(x.type, x.level + 1) : null;
   const rows = [];
   const add = (label, key, f = (v) => v) => { if (st[key] !== undefined) rows.push(`<span>${label}<b>${f(st[key])}${nx && nx[key] !== st[key] ? ' → ' + f(nx[key]) : ''}</b></span>`); };
-  add(st.dps !== undefined ? 'DPS' : 'DMG', st.dps !== undefined ? 'dps' : 'dmg');
-  add('RNG', 'range', (v) => v.toFixed(1));
-  add('RATE', 'rate', (v) => v.toFixed(1) + '/s');
-  add('AOE', 'radius', (v) => v.toFixed(1));
-  add('CHAIN', 'chain');
-  add('SLOW', 'slow', (v) => Math.round((1 - v) * 100) + '%');
+  add(st.dps !== undefined ? t('statDps') : t('statDmg'), st.dps !== undefined ? 'dps' : 'dmg');
+  add(t('statRng'), 'range', (v) => v.toFixed(1));
+  add(t('statRate'), 'rate', (v) => v.toFixed(1) + '/s');
+  add(t('statAoe'), 'radius', (v) => v.toFixed(1));
+  add(t('statChain'), 'chain');
+  add(t('statSlow'), 'slow', (v) => Math.round((1 - v) * 100) + '%');
   box.innerHTML = `<h2>${t('selected')}</h2><div class="row"><span class="nm" style="color:${TOWER_COLOR[x.type]}"></span><span class="tier"></span></div><div class="st">${rows.join('')}</div>
     <div class="btns"><button class="up" type="button"></button><button class="sell" type="button"></button><button class="tgt" type="button"></button></div>`;
   box.querySelector('.nm').textContent = t('tower.' + x.type);
   box.querySelector('.tier').textContent = `${t('level')} ${x.level + 1}/4`;
   const up = box.querySelector('.up');
-  up.textContent = cost === null ? t('maxed') : `${t('upgrade')} · ${cost}  [U]`; up.disabled = !can;
-  box.querySelector('.sell').textContent = `${t('sell')} · +${E.sellValue(x)}  [S]`;
+  up.textContent = cost === null ? t('maxed') : `${t('upgrade')} · €$${cost}  [U]`; up.disabled = !can;
+  box.querySelector('.sell').textContent = `${t('sell')} · +€$${E.sellValue(x)}  [S]`;
   box.querySelector('.tgt').textContent = `${t('target')}: ${t('tgt.' + x.targeting)}  [T]`;
   up.addEventListener('click', doUpgrade); box.querySelector('.sell').addEventListener('click', doSell); box.querySelector('.tgt').addEventListener('click', doTarget);
 }

@@ -141,6 +141,87 @@ export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
   const world = buildWorldGeometry();
 
+  // Pre-render static background layers (sky gradient, stars, orbital radar arcs, background silhouette towers)
+  // onto offscreen 1600x1000 canvases created once so render() blits with ctx.drawImage(bgCanvas, 0, 0).
+  const bgCanvas = createStaticBgCanvas(false);
+  const bgSandyCanvas = createStaticBgCanvas(true);
+
+  function createStaticBgCanvas(sandy) {
+    let off = null;
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+      off = document.createElement('canvas');
+      off.width = W;
+      off.height = H;
+    } else if (typeof OffscreenCanvas !== 'undefined') {
+      off = new OffscreenCanvas(W, H);
+    }
+    if (!off) return null;
+    const bctx = off.getContext('2d');
+    if (!bctx) return null;
+
+    // 1. Sky gradient + horizon light pollution
+    const g = bctx.createLinearGradient(0, 0, 0, H);
+    if (sandy) {
+      g.addColorStop(0, '#04111c');
+      g.addColorStop(0.58, '#072235');
+      g.addColorStop(0.88, '#172330');
+      g.addColorStop(1, '#080c14');
+    } else {
+      g.addColorStop(0, '#04060d');
+      g.addColorStop(0.52, '#090d1f');
+      g.addColorStop(0.84, '#1b0d24');
+      g.addColorStop(0.92, '#240f25');
+      g.addColorStop(1, '#07080d');
+    }
+    bctx.fillStyle = g;
+    bctx.fillRect(0, 0, W, H);
+
+    const hg = bctx.createRadialGradient(W / 2, GROUND + 30, 60, W / 2, GROUND + 30, 820);
+    hg.addColorStop(0, sandy ? 'rgba(0, 240, 255, 0.22)' : 'rgba(255, 0, 60, 0.2)');
+    hg.addColorStop(0.5, 'rgba(0, 240, 255, 0.08)');
+    hg.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    bctx.fillStyle = hg;
+    bctx.fillRect(0, GROUND - 380, W, 420);
+
+    // 2. Stars
+    for (const s of world.stars) {
+      const tw = 0.45 + 0.55 * Math.sin(s.phase);
+      bctx.globalAlpha = tw * 0.7;
+      bctx.fillStyle = s.hue;
+      bctx.fillRect(s.x, s.y, s.r * 1.6, s.r * 1.6);
+    }
+    bctx.globalAlpha = 1;
+
+    // 3. Distant orbital radar arcs & elevation lines
+    bctx.strokeStyle = sandy ? 'rgba(0, 240, 255, 0.11)' : 'rgba(0, 240, 255, 0.055)';
+    bctx.lineWidth = 1;
+    for (const rad of [380, 620, 860, 1100]) {
+      bctx.beginPath();
+      bctx.arc(W / 2, GROUND + 140, rad, Math.PI * 1.08, Math.PI * 1.92);
+      bctx.stroke();
+    }
+    for (let y = 180; y < GROUND - 80; y += 180) {
+      bctx.beginPath();
+      bctx.moveTo(0, y);
+      bctx.lineTo(W, y);
+      bctx.stroke();
+    }
+
+    // 4. Background silhouette towers
+    for (const b of world.bgTowers) {
+      bctx.fillStyle = '#0c1020';
+      bctx.fillRect(b.x, GROUND - b.h, b.w, b.h);
+      bctx.fillStyle = 'rgba(0, 240, 255, 0.04)';
+      bctx.fillRect(b.x, GROUND - b.h, 2, b.h);
+      if (b.beacon) {
+        bctx.fillStyle = '#ff003c';
+        bctx.fillRect(b.x + b.w / 2 - 1.5, GROUND - b.h - 4, 3, 3);
+      }
+    }
+
+    return off;
+  }
+
   let fx = freshFx();
 
   function freshFx() {
@@ -544,18 +625,23 @@ export function createRenderer(canvas) {
       ctx.translate(ox, oy);
     }
 
-    drawSky(sandy);
-    drawStars();
-    drawOrbitalGrid(sandy);
-    drawBgSkyline();
+    const activeBg = sandy ? bgSandyCanvas : bgCanvas;
+    if (activeBg) {
+      ctx.drawImage(activeBg, 0, 0);
+    } else {
+      drawSky(sandy);
+      drawStars();
+      drawOrbitalGrid(sandy);
+      drawBgSkyline();
+    }
     drawRain(sandy);
 
     if (state) {
       drawDistricts(state, names);
       drawCiwsTurrets(state);
       drawGroundWall();
-      drawBatteries(state, ui);
-      drawEnemies(state);
+      drawBatteries(state, ui, lang);
+      drawEnemies(state, lang);
       drawInterceptors(state);
       drawBlasts(state);
       drawZaps();
@@ -860,7 +946,7 @@ export function createRenderer(canvas) {
     }
   }
 
-  function drawBatteries(state, ui) {
+  function drawBatteries(state, ui, lang = 'en') {
     const ptr = ui.pointer || { x: W / 2, y: 300 };
     const pref = ui.preferredBattery;
     const rt = reloadTime(state);
@@ -966,18 +1052,18 @@ export function createRenderer(canvas) {
         ctx.font = '700 12px "Plex Mono", monospace';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ff003c';
-        ctx.fillText(`[${b.idx + 1}] OFFLINE`, b.x, GROUND + 36);
+        ctx.fillText(`[${b.idx + 1}] ${t(lang, 'batOffline')}`, b.x, GROUND + 36);
       }
 
       ctx.restore();
     }
   }
 
-  function drawEnemies(state) {
+  function drawEnemies(state, lang = 'en') {
     for (const e of state.enemies) {
       if (e.dead) continue;
       if (e.type === 'dreadnought') {
-        drawDreadnought(e);
+        drawDreadnought(e, lang);
       } else if (e.type === 'emp_bomber') {
         drawBomber(e);
       } else if (e.type === 'meteor') {
@@ -1217,7 +1303,7 @@ export function createRenderer(canvas) {
     ctx.restore();
   }
 
-  function drawDreadnought(e) {
+  function drawDreadnought(e, lang = 'en') {
     ctx.save();
     ctx.translate(e.x, e.y);
 
@@ -1309,7 +1395,7 @@ export function createRenderer(canvas) {
     ctx.font = '700 12px "Plex Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ff003c';
-    ctx.fillText('BLACKWALL DREADNOUGHT', e.x, by - 10);
+    ctx.fillText(t(lang, 'bossName'), e.x, by - 10);
 
     // Shield bar
     ctx.fillStyle = 'rgba(7, 8, 13, 0.85)';

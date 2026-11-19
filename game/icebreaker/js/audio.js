@@ -7,8 +7,12 @@ export class Synth {
   unlock() {
     if (!this.ctx) {
       const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
-      if (!AC) return;
-      this.ctx = new AC();
+      if (!AC) return null;
+      try {
+        this.ctx = new AC();
+      } catch (e) {
+        return null;
+      }
       const comp = this.ctx.createDynamicsCompressor();
       comp.threshold.value = -14; comp.ratio.value = 6;
       this.master = this.ctx.createGain();

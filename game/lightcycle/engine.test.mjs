@@ -160,6 +160,11 @@ test('Phase Cloak allows passing through enemy trails without leaving solid trai
 test('Phase Cloak expires with uncloak event and cannot activate below cloakCost', () => {
   const s = createGame({ arena: 'watson', hunterCount: 0, shards: false, seed: 1 });
   resetCycle(s, s.player, 10, 18, 'right');
+  assert.equal(TUNING.cloakRegen, 0.22);
+  s.player.cloak = 30;
+  step(s);
+  assert.equal(s.player.cloak, 30 + TUNING.cloakRegen);
+
   s.player.cloak = TUNING.cloakCost - 1;
   assert.equal(activateCloak(s), false);
 

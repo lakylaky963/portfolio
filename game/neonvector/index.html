@@ -11,12 +11,13 @@
 </head>
 <body>
 <header id="hud">
-  <a class="hub" id="hubLink" href="../">◂ CYBER HUB</a>
+  <a class="hub" id="hubLink" href="../">◢ CYBER HUB</a>
   <div class="stats">
     <div class="stat"><span data-i="hull">HULL</span><b id="sHull">♦♦♦</b></div>
     <div class="stat"><span data-i="sector">SECTOR</span><b id="sSector">1</b></div>
     <div class="stat"><span data-i="mult">MULT</span><b id="sMult">1.0×</b></div>
-    <div class="stat wide"><span data-i="overdrive">OVERDRIVE</span><b id="sOd">0%</b><i class="bar"><u id="odBar"></u></i></div>
+    <div class="stat wide"><span data-i="overdrive">OVERDRIVE</span><b id="sOd">25%</b><i class="bar"><u id="odBar"></u></i></div>
+    <div class="stat"><span data-i="eddies">EDDIES</span><b id="sEddies">€$0</b></div>
     <div class="stat"><span data-i="score">SCORE</span><b id="sScore">0</b></div>
   </div>
   <div class="btns">
@@ -38,6 +39,7 @@
       <button id="bResumeSaved" class="big cyan" hidden></button>
       <button id="bStart" class="big" data-i="start">JACK IN</button>
       <button id="bEndless" class="big alt" data-i="endless" hidden>ENDLESS OVERCLOCK</button>
+      <a id="bOverlayHub" class="big hub-btn" href="../" data-i="hub">◢ CYBER HUB</a>
     </div>
   </section>
   <section id="pauseOverlay" class="overlay pause-overlay" hidden>
@@ -45,7 +47,8 @@
     <p id="pauseInfo" class="pause-info"></p>
     <div class="row">
       <button id="bResume" class="big cyan" data-i="resume">RESUME</button>
-      <a id="bPauseHub" class="big hub-btn" href="../" data-i="hub">◂ CYBER HUB</a>
+      <button id="bRestart" class="big" data-i="restart">NEW RUN</button>
+      <a id="bPauseHub" class="big hub-btn" href="../" data-i="hub">◢ CYBER HUB</a>
     </div>
   </section>
 </main>

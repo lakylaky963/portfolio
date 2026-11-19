@@ -23,7 +23,7 @@ export const TUNING = Object.freeze({
   boostCost: 3.5,
   boostMin: 4,
   boostRegen: 0.35,
-  cloakRegen: 0.15,
+  cloakRegen: 0.22,
   shardCloak: 35,
   shardBoost: 40,
   shardScore: 50,

@@ -51,12 +51,12 @@ export const ENEMY_DEFS = {
 export const LIGHT_TYPES = new Set(['missile', 'sub', 'bomb', 'mirv', 'stealth']);
 
 export const UPGRADES = {
-  blast: { base: 120, step: 90, max: 5 },
-  autoloader: { base: 120, step: 90, max: 5 },
-  velocity: { base: 100, step: 80, max: 5 },
-  ciws: { base: 260, step: 180, max: 3 },
-  shield: { base: 220, step: 160, max: 3 },
-  rebuild: { base: 350, step: 150, max: Infinity },
+  blast: { base: 110, step: 75, max: 5 },
+  autoloader: { base: 110, step: 75, max: 5 },
+  velocity: { base: 90, step: 70, max: 5 },
+  ciws: { base: 220, step: 160, max: 3 },
+  shield: { base: 200, step: 140, max: 3 },
+  rebuild: { base: 300, step: 125, max: Infinity },
 };
 
 export const CHAIN_TIERS = [

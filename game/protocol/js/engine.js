@@ -8,6 +8,8 @@ export const MAX_BUFFER = 8;
 export const BASE_BUFFER = 5;
 export const FREEZE_SECONDS = 8;
 export const FAST_PLAN_SECONDS = 4;
+export const MAX_TIME_BONUS = 15;
+export const MAX_TIME_LIMIT = 60;
 
 export const DAEMON_TYPES = {
   DATAMINE_V1: { eddies: 60, time: 0, mult: 1 },
@@ -19,7 +21,7 @@ export const DAEMON_TYPES = {
 
 export const SHOP = {
   buffer: { price: (run) => 150 * (run.bufferSize - BASE_BUFFER + 1), max: MAX_BUFFER },
-  time: { price: () => 80 },
+  time: { price: () => 80, max: MAX_TIME_BONUS },
   freeze: { price: () => 100 },
   flip: { price: () => 90 },
   hint: { price: () => 70 },
@@ -251,7 +253,7 @@ export function finalize(state, why) {
   const subEddies = eddies + fullSweepEddies;
   const finalScore = Math.round(subScore * streakMult);
   const finalEddies = Math.round(subEddies * streakMult);
-  const xp = Math.floor(finalScore / 10) + state.tier * 5;
+  const xp = Math.floor(finalScore / 35) + state.tier * 8;
   state.result = {
     outcome: full ? 'full' : 'partial',
     uploaded: upIds,
@@ -292,16 +294,16 @@ export function useFlip(state) {
   return { ok: true };
 }
 
-// Bounded DFS: find a continuation that uploads every daemon.
-export function solveFrom(state, cap = 200000) {
+// Bounded DFS: find a continuation that uploads every target daemon.
+export function solveFrom(state, cap = 200000, targets = state.daemons) {
   const buf = state.buffer.slice();
   const used = new Set(state.used);
   let axis = state.axis, index = state.index;
   let nodes = 0;
-  const done = () => state.daemons.every((d) => containsSeq(buf, d.seq));
+  const done = () => targets.every((d) => containsSeq(buf, d.seq));
   const feasible = () => {
     const tmp = { buffer: buf, bufferSize: state.bufferSize };
-    return state.daemons.every((d) => daemonStatus(tmp, d).status !== 'locked');
+    return targets.every((d) => daemonStatus(tmp, d).status !== 'locked');
   };
   function rec(path) {
     if (done()) return path;
@@ -335,12 +337,25 @@ function containsSeq(buf, seq) {
   return false;
 }
 
+function daemonPriorityValue(d) {
+  const t = DAEMON_TYPES[d.type] || { eddies: 0, time: 0, mult: 1 };
+  return t.eddies + (t.mult > 1 ? 120 : 0) + t.time * 10 + d.seq.length * 15;
+}
+
 export function nextHintCell(state) {
   const sp = state.puzzle.solutionPath;
   const n = state.path.length;
   if (n < sp.length && state.path.every((p, i) => p.r === sp[i].r && p.c === sp[i].c) && isValidPick(state, sp[n].r, sp[n].c)) return sp[n];
   const sol = solveFrom(state);
   if (sol && sol.length) return sol[0];
+  // Fallback: try solving for the highest-value single remaining solvable daemon
+  const pending = state.daemons
+    .filter((d) => daemonStatus(state, d).status === 'pending')
+    .sort((a, b) => daemonPriorityValue(b) - daemonPriorityValue(a));
+  for (const d of pending) {
+    const singleSol = solveFrom(state, 50000, [d]);
+    if (singleSol && singleSol.length) return singleSol[0];
+  }
   const v = validCells(state);
   return v.length ? v[0] : null;
 }
@@ -366,7 +381,7 @@ export function createRun({ seed = 1 } = {}) {
 
 export function startBreach(run) {
   const puzzle = generatePuzzle({ seed: run.seed + run.tier * 7919 + run.cleared * 31, tier: run.tier, bufferSize: run.bufferSize });
-  const timeLimit = baseTime(run.tier) + run.timeBonus + run.carryTime;
+  const timeLimit = Math.min(MAX_TIME_LIMIT, baseTime(run.tier) + run.timeBonus + run.carryTime);
   run.carryTime = 0;
   return createBreach(puzzle, { tier: run.tier, streak: run.streak, timeLimit, inv: run.inv });
 }
@@ -376,6 +391,7 @@ export function applyBreach(run, state) {
   const res = state.result || finalize(state, 'end');
   if (res.outcome === 'fail') {
     run.status = 'over';
+    run.won = run.cleared >= 5;
     return res;
   }
   run.eddies += res.eddies;
@@ -383,6 +399,7 @@ export function applyBreach(run, state) {
   run.xp += res.xp;
   run.carryTime += res.bonusTime;
   run.cleared++;
+  if (run.cleared >= 5) run.won = true;
   if (res.outcome === 'full') {
     run.streak++;
     if (!run.badges.includes('full-sweep')) run.badges.push('full-sweep');
@@ -397,6 +414,7 @@ export function buy(run, item) {
   const def = SHOP[item];
   if (!def) return { ok: false, reason: 'unknown' };
   if (item === 'buffer' && run.bufferSize >= def.max) return { ok: false, reason: 'max' };
+  if (item === 'time' && run.timeBonus >= def.max) return { ok: false, reason: 'max' };
   const price = def.price(run);
   if (run.eddies < price) return { ok: false, reason: 'funds' };
   run.eddies -= price;

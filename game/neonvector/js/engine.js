@@ -32,7 +32,7 @@ export function createGame(opts = {}) {
     time: 0, sectorTime: 0, sector: 1, phase: 'play', phaseTimer: 0, won: false, endless: opts.mode === 'endless',
     player: { x: W / 2, y: H - 110, hull: CFG.maxHull, maxHull: CFG.maxHull, shield: 0, invuln: 0, weapon: 1, drones: 0, fireCd: 0, droneCd: 0, hitR: CFG.hitR, grazeR: CFG.grazeR },
     bullets: [], pbullets: [], enemies: [], pickups: [], lanes: [], boss: null,
-    score: 0, eddies: 0, xp: 0, mult: 1, multTimer: 0, overdrive: 0, grazes: 0, kills: 0, bossesKilled: 0, hullHits: 0, bombsUsed: 0,
+    score: 0, eddies: 0, xp: 0, mult: 1, multTimer: 0, overdrive: 25, grazes: 0, kills: 0, bossesKilled: 0, hullHits: 0, bombsUsed: 0,
     spawnTimer: 1.5, nextId: 1, groupId: 1, groups: {}, events: [], shake: 0,
   };
 }
@@ -40,7 +40,7 @@ const ev = (s, type, x, y, extra) => s.events.push({ type, x, y, ...extra });
 
 export function ebullet(s, x, y, ang, speed, r = 5) {
   if (s.bullets.length >= CFG.maxBullets) return null;
-  const sp = speed * (1 + 0.05 * Math.min(4, (s.sector - 1) % 5));
+  const sp = speed * (1 + 0.05 * Math.min(8, Math.max(0, s.sector - 1)));
   const b = { x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, r, g: false };
   s.bullets.push(b);
   return b;
@@ -60,7 +60,7 @@ export function spawnBoss(s) {
   const loop = Math.floor((s.sector - 1) / 5);
   const hp = Math.round((420 + 180 * idx) * (1 + 0.5 * loop));
   s.boss = {
-    kind, name: BOSS_NAMES[idx], x: W / 2, y: -80, hp, maxHp: hp, phase: 0, phases: BOSS_PHASES[kind],
+    idx, kind, name: BOSS_NAMES[idx], x: W / 2, y: -80, hp, maxHp: hp, phase: 0, phases: BOSS_PHASES[kind],
     r: kind === 'seraph' ? 34 : 28, t: 0, entering: true, cd: 1.5, ang: 0, st: 0,
     wings: kind === 'spider' ? [{ dx: -70, hp: 90, maxHp: 90 }, { dx: 70, hp: 90, maxHp: 90 }] : null,
     laser: null, tx: W / 2, dash: 0,
@@ -98,7 +98,7 @@ function killEnemy(s, e) {
   const d = ENEMY_DEF[e.type];
   s.score += Math.round(d.pts * s.mult);
   s.eddies += e.type === 'swarm' ? 1 : 4;
-  s.multTimer = 4; s.overdrive = Math.min(100, s.overdrive + 1.5);
+  s.multTimer = 4; s.overdrive = Math.min(100, s.overdrive + 2.2);
   ev(s, 'explode', e.x, e.y, { size: e.r });
   let dropped = false;
   if (e.group && s.groups[e.group] !== undefined) {
@@ -438,7 +438,7 @@ export function step(s, input = {}, dt = 1 / 60) {
     } else if (!b.g && d < b.r + p.grazeR) {
       b.g = true; s.grazes++;
       s.mult = Math.min(CFG.maxMult, s.mult + 0.15); s.multTimer = 4;
-      s.overdrive = Math.min(100, s.overdrive + 2.5);
+      s.overdrive = Math.min(100, s.overdrive + 3.2);
       s.score += Math.round(5 * s.mult);
       ev(s, 'graze', b.x, b.y);
     }

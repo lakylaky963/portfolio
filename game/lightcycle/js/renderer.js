@@ -9,6 +9,10 @@ const DIR_ANGLE = {
   up: -Math.PI * 0.5,
 };
 
+const MAX_PARTICLES = 220;
+const MAX_RINGS = 24;
+const MAX_POPUPS = 24;
+
 export class LightcycleRenderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -20,6 +24,7 @@ export class LightcycleRenderer {
     this.ox = 0;
     this.oy = 0;
     this.time = 0;
+    this.avgDt = 0.016;
 
     this.particles = [];
     this.rings = [];
@@ -46,6 +51,28 @@ export class LightcycleRenderer {
     this.shake = 0;
     this.glitch = 0;
     this.flash.alpha = 0;
+    this.avgDt = 0.016;
+  }
+
+  _pushParticle(p) {
+    if (this.particles.length >= MAX_PARTICLES) {
+      this.particles.shift();
+    }
+    this.particles.push(p);
+  }
+
+  _pushRing(r) {
+    if (this.rings.length >= MAX_RINGS) {
+      this.rings.shift();
+    }
+    this.rings.push(r);
+  }
+
+  _pushPopup(pop) {
+    if (this.popups.length >= MAX_POPUPS) {
+      this.popups.shift();
+    }
+    this.popups.push(pop);
   }
 
   resize() {
@@ -84,10 +111,10 @@ export class LightcycleRenderer {
       if (e.type === 'derez') {
         const col = e.color || '#ff2bd6';
         this._spawnExplosion(pos.x, pos.y, col, 32, 1.15);
-        this.rings.push({ x: pos.x, y: pos.y, r: this.cell * 0.5, maxR: this.cell * 7.5, color: col, life: 0.52, maxLife: 0.52, lw: 3 });
-        this.rings.push({ x: pos.x, y: pos.y, r: this.cell * 0.2, maxR: this.cell * 4.5, color: '#ffffff', life: 0.3, maxLife: 0.3, lw: 2 });
+        this._pushRing({ x: pos.x, y: pos.y, r: this.cell * 0.5, maxR: this.cell * 7.5, color: col, life: 0.52, maxLife: 0.52, lw: 3 });
+        this._pushRing({ x: pos.x, y: pos.y, r: this.cell * 0.2, maxR: this.cell * 4.5, color: '#ffffff', life: 0.3, maxLife: 0.3, lw: 2 });
         const comboTxt = e.combo > 1 ? ` ${e.combo}× ${this.labels.combo}!` : '';
-        this.popups.push({
+        this._pushPopup({
           x: pos.x, y: pos.y - this.cell * 0.6,
           text: `+${e.points} ${this.labels.derez}${comboTxt}`,
           color: e.combo > 1 ? '#fcee09' : col,
@@ -97,10 +124,10 @@ export class LightcycleRenderer {
         this.flash = { alpha: 0.14, color: col };
       } else if (e.type === 'emp') {
         const maxR = Math.hypot(this.cell * W, this.cell * H) * 0.72;
-        this.rings.push({ x: pos.x, y: pos.y, r: this.cell * 0.8, maxR, color: '#00f0ff', life: 0.75, maxLife: 0.75, lw: 5 });
-        this.rings.push({ x: pos.x, y: pos.y, r: this.cell * 0.4, maxR: maxR * 0.85, color: '#ff003c', life: 0.65, maxLife: 0.65, lw: 3 });
+        this._pushRing({ x: pos.x, y: pos.y, r: this.cell * 0.8, maxR, color: '#00f0ff', life: 0.75, maxLife: 0.75, lw: 5 });
+        this._pushRing({ x: pos.x, y: pos.y, r: this.cell * 0.4, maxR: maxR * 0.85, color: '#ff003c', life: 0.65, maxLife: 0.65, lw: 3 });
         this._spawnExplosion(pos.x, pos.y, '#00f0ff', 28, 1.3);
-        this.popups.push({
+        this._pushPopup({
           x: pos.x, y: pos.y - this.cell,
           text: this.labels.emp,
           color: '#00f0ff',
@@ -111,17 +138,17 @@ export class LightcycleRenderer {
       } else if (e.type === 'shard') {
         const col = e.kind === 'emp' ? '#ff003c' : '#fcee09';
         this._spawnExplosion(pos.x, pos.y, col, 16, 0.75);
-        this.rings.push({ x: pos.x, y: pos.y, r: this.cell * 0.3, maxR: this.cell * 3.8, color: col, life: 0.38, maxLife: 0.38, lw: 2.5 });
-        this.popups.push({
+        this._pushRing({ x: pos.x, y: pos.y, r: this.cell * 0.3, maxR: this.cell * 3.8, color: col, life: 0.38, maxLife: 0.38, lw: 2.5 });
+        this._pushPopup({
           x: pos.x, y: pos.y - this.cell * 0.5,
           text: `+${e.points}`,
           color: col,
           life: 0.95, maxLife: 0.95, scale: 0.92,
         });
       } else if (e.type === 'cloak') {
-        this.rings.push({ x: pos.x, y: pos.y, r: this.cell * 0.3, maxR: this.cell * 4.5, color: '#00f0ff', life: 0.4, maxLife: 0.4, lw: 2.5 });
+        this._pushRing({ x: pos.x, y: pos.y, r: this.cell * 0.3, maxR: this.cell * 4.5, color: '#00f0ff', life: 0.4, maxLife: 0.4, lw: 2.5 });
         this._spawnExplosion(pos.x, pos.y, '#7ef9ff', 14, 0.6);
-        this.popups.push({
+        this._pushPopup({
           x: pos.x, y: pos.y - this.cell * 0.8,
           text: this.labels.cloak,
           color: '#7ef9ff',
@@ -130,7 +157,7 @@ export class LightcycleRenderer {
       } else if (e.type === 'crash') {
         this._spawnExplosion(pos.x, pos.y, '#00f0ff', 24, 1.15);
         this._spawnExplosion(pos.x, pos.y, '#ff003c', 22, 1.35);
-        this.rings.push({ x: pos.x, y: pos.y, r: this.cell * 0.4, maxR: this.cell * 8, color: '#ff003c', life: 0.6, maxLife: 0.6, lw: 4 });
+        this._pushRing({ x: pos.x, y: pos.y, r: this.cell * 0.4, maxR: this.cell * 8, color: '#ff003c', life: 0.6, maxLife: 0.6, lw: 4 });
         this.shake = Math.max(this.shake, 13);
         this.glitch = 0.45;
         this.flash = { alpha: 0.32, color: '#ff003c' };
@@ -150,7 +177,7 @@ export class LightcycleRenderer {
       const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.45;
       const spd = baseSpd * (0.35 + Math.random() * 0.95);
       const life = 0.32 + Math.random() * 0.45;
-      this.particles.push({
+      this._pushParticle({
         x, y,
         vx: Math.cos(ang) * spd,
         vy: Math.sin(ang) * spd,
@@ -171,7 +198,7 @@ export class LightcycleRenderer {
       const spread = (Math.random() - 0.5) * this.cell * 2.4;
       const back = this.cell * (4 + Math.random() * 5);
       const life = 0.14 + Math.random() * 0.16;
-      this.particles.push({
+      this._pushParticle({
         x: pos.x - d.x * this.cell * 0.45 + (Math.random() - 0.5) * 3,
         y: pos.y - d.y * this.cell * 0.45 + (Math.random() - 0.5) * 3,
         vx: -d.x * back + (d.y !== 0 ? spread : 0),
@@ -226,6 +253,7 @@ export class LightcycleRenderer {
 
   draw(state, dt = 0.016, alpha = 1) {
     if (dt > 0) {
+      this.avgDt = this.avgDt * 0.9 + Math.min(0.1, dt) * 0.1;
       this._updateEffects(dt);
       if (state && state.phase === 'playing') this._spawnBoostSparks(state, alpha);
     }
@@ -549,21 +577,24 @@ export class LightcycleRenderer {
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    const highQuality = this.avgDt <= 0.025;
 
     // Outer neon bloom
     buildPath();
     ctx.strokeStyle = c.color;
     ctx.globalAlpha = 0.34;
     ctx.lineWidth = Math.max(4, this.cell * (isBoost ? 0.88 : 0.72));
-    ctx.shadowColor = c.color;
-    ctx.shadowBlur = isBoost ? 18 : 12;
+    if (highQuality) {
+      ctx.shadowColor = c.color;
+      ctx.shadowBlur = isBoost ? 18 : 12;
+    }
     ctx.stroke();
 
     // Saturated neon ribbon
     buildPath();
     ctx.globalAlpha = 0.95;
     ctx.lineWidth = Math.max(2.4, this.cell * 0.42);
-    ctx.shadowBlur = 6;
+    ctx.shadowBlur = highQuality ? 6 : 0;
     ctx.stroke();
 
     // Hot white-tinted center filament
@@ -692,11 +723,12 @@ export class LightcycleRenderer {
 
   _drawBorder(ctx, arena, aw, ah) {
     ctx.save();
+    const highQuality = this.avgDt <= 0.025;
     if (arena.wrap) {
       // Blackwall Warp — pulsing portal energy seams
       const dash = Math.max(8, this.cell * 1.1);
       ctx.shadowColor = '#ff003c';
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = highQuality ? 14 : 0;
       ctx.strokeStyle = '#ff003c';
       ctx.lineWidth = 2.6;
       ctx.setLineDash([dash, dash * 0.65]);
@@ -704,7 +736,7 @@ export class LightcycleRenderer {
       ctx.strokeRect(this.ox, this.oy, aw, ah);
 
       ctx.shadowColor = '#00f0ff';
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = highQuality ? 10 : 0;
       ctx.strokeStyle = 'rgba(0, 240, 255, 0.78)';
       ctx.lineWidth = 1.4;
       ctx.lineDashOffset = this.time * 32;
@@ -713,7 +745,7 @@ export class LightcycleRenderer {
     } else {
       // Solid lethal perimeter wall
       ctx.shadowColor = arena.color;
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = highQuality ? 14 : 0;
       ctx.strokeStyle = arena.color;
       ctx.lineWidth = 2.4;
       ctx.strokeRect(this.ox, this.oy, aw, ah);
@@ -722,7 +754,7 @@ export class LightcycleRenderer {
       const br = Math.min(22, this.cell * 2.2);
       ctx.strokeStyle = '#fcee09';
       ctx.shadowColor = '#fcee09';
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = highQuality ? 10 : 0;
       ctx.lineWidth = 2.6;
       ctx.beginPath();
       // Top-left
@@ -754,14 +786,12 @@ export class LightcycleRenderer {
       ctx.restore();
     }
 
-    // Shatter particles & nitro sparks
+    // Shatter particles & nitro sparks (no per-particle shadowBlur for hot-loop performance)
+    ctx.save();
     for (const p of this.particles) {
       const a = Math.max(0, p.life / p.maxLife);
-      ctx.save();
       ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
       if (p.rect) {
         ctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
       } else {
@@ -769,8 +799,8 @@ export class LightcycleRenderer {
         ctx.arc(p.x, p.y, p.size * 0.55, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.restore();
     }
+    ctx.restore();
 
     // Floating score / status popups
     for (const pop of this.popups) {

@@ -307,10 +307,16 @@ test('blast radius upgrade deducts cost and enlarges shockwaves; costs escalate'
   s.eddies = 1000;
   const r0 = E.blastRadius(s);
   const c0 = E.upgradeCost(s, 'blast');
+  assert.equal(c0, 110);
   assert.ok(E.buy(s, 'blast').ok);
   assert.equal(s.eddies, 1000 - c0);
   assert.ok(E.blastRadius(s) > r0);
-  assert.ok(E.upgradeCost(s, 'blast') > c0);
+  assert.equal(E.upgradeCost(s, 'blast'), 185);
+  assert.equal(E.upgradeCost(s, 'autoloader'), 110);
+  assert.equal(E.upgradeCost(s, 'velocity'), 90);
+  assert.equal(E.upgradeCost(s, 'ciws'), 220);
+  assert.equal(E.upgradeCost(s, 'shield'), 200);
+  assert.equal(E.upgradeCost(s, 'rebuild'), 300);
 });
 
 test('autoloader increases clip size and reload speed; max level enforced', () => {

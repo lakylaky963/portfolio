@@ -25,7 +25,7 @@ export const STRINGS = Object.freeze({
     saveExit: 'SAVE & EXIT TO HUB',
     endless: 'ENDLESS OVERCLOCK',
     helpTitle: 'CONTROLS & BREACH PROTOCOL',
-    helpControls: 'Move: Mouse / Touch / A-D / ←→  •  Launch & Lasers: Click / Space  •  Sandevistan: Q  •  Pause: P  •  Mute: M',
+    helpControls: 'Move: Mouse / Touch / A-D / ←→  •  Launch & Lasers: Click / Space  •  Sandevistan: Q / Shift  •  Pause: P / Esc  •  Mute: M',
     helpTip: 'Detonate red Capacitors for 3×3 chain blasts. Lasers & blasts shatter Chrome walls. Break Boss shields to expose the Core.',
     puMulti: 'MULTI-BALL',
     puWide: 'WIDE DECK',
@@ -34,6 +34,7 @@ export const STRINGS = Object.freeze({
     puShield: 'MAG-SHIELD',
     puEddy: 'EDDY SURGE',
     statusStun: 'EMP STUNNED',
+    iceCore: 'ICE CORE',
     launchHint: 'CLICK OR PRESS SPACE TO LAUNCH',
     pausedTitle: 'LINK SUSPENDED',
     pausedSub: 'NEURAL BUFFER PAUSED',
@@ -102,15 +103,16 @@ export const STRINGS = Object.freeze({
     saveExit: 'שמור וחזור למרכז',
     endless: 'אוברקלוק אינסופי',
     helpTitle: 'שליטה ופרוטוקול פריצה',
-    helpControls: 'תזוזה: עכבר / מגע / A-D / חיצי צד  •  שיגור ולייזר: קליק / רווח  •  סנדביסטן: Q  •  השהיה: P  •  השתקה: M',
+    helpControls: 'תזוזה: עכבר / מגע / A-D / חיצי צד  •  שיגור ולייזר: קליק / רווח  •  סנדביסטן: Q / Shift  •  השהיה: P / Esc  •  השתקה: M',
     helpTip: 'פוצצו קבלים אדומים לפיצוץ שרשרת 3×3. לייזרים ופיצוצים מנפצים קירות כרום. שברו מגני בוס לחשיפת הליבה.',
     puMulti: 'רב-כדור',
     puWide: 'מחבט רחב',
     puLaser: 'לייזר כפול',
     puPierce: 'חדירת פלזמה',
-    puShield: 'מגן תחתון',
+    puShield: 'מגן מגנטי',
     puEddy: 'בונוס יורודולר',
     statusStun: 'הלם EMP',
+    iceCore: 'ליבת קרח',
     launchHint: 'לחצו קליק או רווח לשיגור הכדור',
     pausedTitle: 'החיבור הושהה',
     pausedSub: 'חוצץ עצבי בהמתנה',
@@ -120,7 +122,7 @@ export const STRINGS = Object.freeze({
     bossWarning: 'זוהה בוס ליבה',
     victoryTitle: 'החומה השחורה נפרצה',
     victorySub: 'כל 10 הסקטורים נופצו',
-    gameOverTitle: 'קו שטוח',
+    gameOverTitle: 'הליבה קרסה',
     gameOverSub: 'מערכת ההגנה ניתקה את החיבור',
     statScore: 'ניקוד סופי',
     statStage: 'שלב שיא',
@@ -168,7 +170,12 @@ export function t(lang, key, vars = null) {
   return str;
 }
 
-export function stageTitle(lang, rawName) {
+export function stageTitle(lang, levelOrName, maybeName) {
   const dict = STRINGS[lang] || STRINGS.en;
-  return (dict.stages && dict.stages[rawName]) || rawName;
+  if (maybeName !== undefined) {
+    const num = String(levelOrName).padStart(2, '0');
+    const title = (dict.stages && dict.stages[maybeName]) || maybeName;
+    return lang === 'he' ? `סקטור ${num} // ${title}` : `SECTOR ${num} // ${title}`;
+  }
+  return (dict.stages && dict.stages[levelOrName]) || levelOrName;
 }

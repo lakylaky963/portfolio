@@ -1,6 +1,7 @@
 // ICEBREAKER // Netrunner Survivor — Main UI, Input, Audio, Auto-Pause & Hub SDK Controller.
 import {
   initGameChrome,
+  markLaunched,
   recordRun,
   getProfile,
   setLang as setHubLang,
@@ -87,6 +88,13 @@ export function serializeState(s) {
     pendingLevels: s.pendingLevels,
     draft: s.draft ? s.draft.map((d) => ({ ...d })) : null,
     stats: { ...s.stats },
+    recordedTotals: s.recordedTotals
+      ? {
+          eddies: Number(s.recordedTotals.eddies) || 0,
+          xp: Number(s.recordedTotals.xp) || 0,
+          wonRecorded: !!s.recordedTotals.wonRecorded,
+        }
+      : { eddies: 0, xp: 0, wonRecorded: false },
   };
 }
 
@@ -110,7 +118,7 @@ export function deserializeState(raw) {
   };
   s.chrono = { active: false, t: 0, cd: 0, ...(raw.chrono || {}) };
 
-  s.enemies = raw.enemies.map((e) => ({ ...e, dead: false }));
+  s.enemies = raw.enemies.map((e) => ({ ...e, isBoss: e.type === 'boss' || !!e.isBoss, dead: false }));
   const enemyById = new Map(s.enemies.map((e) => [e.id, e]));
   s.bullets = Array.isArray(raw.bullets)
     ? raw.bullets.map((b) => {
@@ -137,6 +145,13 @@ export function deserializeState(raw) {
   s.pendingLevels = Number(raw.pendingLevels) || 0;
   s.draft = Array.isArray(raw.draft) ? raw.draft.map((d) => ({ ...d })) : null;
   s.stats = { damageTaken: 0, damageDealt: 0, ...(raw.stats || {}) };
+  s.recordedTotals = raw.recordedTotals && typeof raw.recordedTotals === 'object'
+    ? {
+        eddies: Number(raw.recordedTotals.eddies) || 0,
+        xp: Number(raw.recordedTotals.xp) || 0,
+        wonRecorded: !!raw.recordedTotals.wonRecorded,
+      }
+    : { eddies: 0, xp: 0, wonRecorded: false };
   s.events = [];
   s.grid = new Map();
   recomputeStats(s);
@@ -171,7 +186,7 @@ function boot() {
   let autoPaused = false;
   let endlessStart = false;
   let dilateQueued = false;
-  let recordedTotals = { eddies: 0, xp: 0 };
+  let recordedTotals = { eddies: 0, xp: 0, wonRecorded: false };
   let runRecorded = false;
   let lastLoadoutSig = '';
   let lastDraftSig = '';
@@ -180,7 +195,7 @@ function boot() {
   let accum = 0;
 
   const keys = new Set();
-  const joy = { active: false, pointerId: null, ox: 0, oy: 0, cx: 0, cy: 0, maxR: 58, mx: 0, my: 0 };
+  const joy = { active: false, id: null, pointerId: null, ox: 0, oy: 0, cx: 0, cy: 0, maxR: 58, mx: 0, my: 0 };
 
   // ---------- Hub SDK Chrome ----------
   let initChrome = { lang: 'en', muted: false };
@@ -190,6 +205,7 @@ function boot() {
       onLangChange: (l) => applyLanguage(l, false),
       onMuteChange: (m) => applyMute(m, false),
     }) || initChrome;
+    markLaunched('icebreaker');
   } catch (e) { /* Hub SDK optional */ }
 
   // ---------- Helpers ----------
@@ -275,11 +291,16 @@ function boot() {
     autoPaused = false;
     dilateQueued = false;
     runRecorded = false;
-    recordedTotals = { eddies: 0, xp: 0 };
+    recordedTotals = { eddies: 0, xp: 0, wonRecorded: false };
+    game.recordedTotals = { ...recordedTotals };
     lastLoadoutSig = '';
     lastDraftSig = '';
     keys.clear();
     joy.active = false;
+    joy.id = null;
+    joy.pointerId = null;
+    joy.mx = 0;
+    joy.my = 0;
 
     renderer.reset(game);
     hideAllModals();
@@ -308,11 +329,22 @@ function boot() {
     autoPaused = false;
     dilateQueued = false;
     runRecorded = false;
-    recordedTotals = { eddies: 0, xp: 0 };
+    recordedTotals = game.recordedTotals
+      ? {
+          eddies: Number(game.recordedTotals.eddies) || 0,
+          xp: Number(game.recordedTotals.xp) || 0,
+          wonRecorded: !!game.recordedTotals.wonRecorded,
+        }
+      : { eddies: 0, xp: 0, wonRecorded: false };
+    game.recordedTotals = { ...recordedTotals };
     lastLoadoutSig = '';
     lastDraftSig = '';
     keys.clear();
     joy.active = false;
+    joy.id = null;
+    joy.pointerId = null;
+    joy.mx = 0;
+    joy.my = 0;
 
     renderer.reset(game);
     hideAllModals();
@@ -493,15 +525,22 @@ function boot() {
     runRecorded = true;
     keys.clear();
     joy.active = false;
+    joy.id = null;
+    joy.pointerId = null;
+    joy.mx = 0;
+    joy.my = 0;
     $('btnPause').disabled = true;
     $('draftModal').hidden = true;
     $('pauseModal').hidden = true;
 
     const sum = runSummary(game);
-    const deltaEddies = Math.max(0, sum.eddies - recordedTotals.eddies);
-    const deltaXp = Math.max(0, sum.xp - recordedTotals.xp);
+    const deltaEddies = Math.max(0, sum.eddies - (recordedTotals.eddies || 0));
+    const deltaXp = Math.max(0, sum.xp - (recordedTotals.xp || 0));
+    const shouldRecordWin = !!(sum.won && !recordedTotals.wonRecorded);
     recordedTotals.eddies = sum.eddies;
     recordedTotals.xp = sum.xp;
+    if (sum.won) recordedTotals.wonRecorded = true;
+    game.recordedTotals = { ...recordedTotals };
 
     let sdkRes = null;
     try {
@@ -509,7 +548,7 @@ function boot() {
         score: sum.score,
         eddies: deltaEddies,
         xp: deltaXp,
-        won: sum.won,
+        won: shouldRecordWin,
         wave: sum.wave,
         badges: sum.badges,
       });
@@ -567,6 +606,8 @@ function boot() {
     synth.unlock();
     synth.click();
     if (!continueEndless(game)) return;
+    recordedTotals.wonRecorded = true;
+    game.recordedTotals = { ...recordedTotals };
     runRecorded = false;
     $('endModal').hidden = true;
     $('btnPause').disabled = false;
@@ -795,6 +836,11 @@ function boot() {
         processEvents(drainEvents(game));
 
         if (game.phase === 'levelup') {
+          joy.active = false;
+          joy.id = null;
+          joy.pointerId = null;
+          joy.mx = 0;
+          joy.my = 0;
           renderDraftModal();
           accum = 0;
           break;
@@ -840,6 +886,7 @@ function boot() {
     synth.unlock();
     const rect = cv.getBoundingClientRect();
     joy.active = true;
+    joy.id = e.pointerId;
     joy.pointerId = e.pointerId;
     joy.ox = e.clientX - rect.left;
     joy.oy = e.clientY - rect.top;
@@ -858,6 +905,7 @@ function boot() {
   function releaseJoy(e) {
     if (!joy.active || (e && e.pointerId !== joy.pointerId)) return;
     joy.active = false;
+    joy.id = null;
     joy.pointerId = null;
     joy.mx = 0;
     joy.my = 0;

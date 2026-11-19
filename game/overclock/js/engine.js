@@ -207,7 +207,7 @@ export function createGame({ seed = 1, level = 1, layout = null, boss = null } =
   const s = {
     rng: seed >>> 0, level, score: 0, eddies: 0, lives: START_LIVES,
     phase: 'play', combo: 0, bestCombo: 0, time: 0,
-    paddle: { x: W / 2, targetX: W / 2, y: PADDLE_Y, h: PADDLE_H },
+    paddle: { x: W / 2, targetX: W / 2, vx: 0, y: PADDLE_Y, h: PADDLE_H },
     balls: [], bricks: [], capsules: [], lasers: [], pulses: [], boss: null,
     timers: { wide: 0, laser: 0, pierce: 0, stun: 0, slowmo: 0, laserCd: 0, laserAuto: 0, clear: 0 },
     slowCharge: 1, shield: false, events: [],
@@ -261,15 +261,30 @@ export function paddleBounceVelocity(offset, speed) {
 // ---------- Player actions ----------
 export function setPaddleTarget(s, x) {
   const half = paddleWidth(s) / 2;
+  const prevTarget = s.paddle.targetX;
   s.paddle.targetX = clamp(x, half, W - half);
+  const delta = s.paddle.targetX - prevTarget;
+  if (delta !== 0) {
+    const maxOff = half * 0.45;
+    for (const b of s.balls) {
+      if (b.attached) {
+        b.offset = clamp((b.offset || 0) + delta * 0.18, -maxOff, maxOff);
+        if (Math.abs(b.offset) < 0.5) b.offset = delta > 0 ? 0.5 : -0.5;
+      }
+    }
+  }
 }
 
 export function launch(s) {
   if (s.phase !== 'play') return false;
   let any = false;
+  const half = paddleWidth(s) / 2;
   for (const b of s.balls) {
     if (!b.attached) continue;
-    const v = paddleBounceVelocity(b.offset / (paddleWidth(s) / 2) || -0.15, b.speed);
+    const velBias = clamp((s.paddle.vx || 0) / 1200, -0.35, 0.35);
+    const rawOffset = ((b.offset || 0) / half) + velBias;
+    const normOffset = rawOffset !== 0 ? clamp(rawOffset, -0.75, 0.75) : -0.15;
+    const v = paddleBounceVelocity(normOffset, b.speed);
     b.vx = v.vx; b.vy = v.vy; b.attached = false; any = true;
   }
   if (any) emit(s, { type: 'launch' });
@@ -454,7 +469,9 @@ function reflectRadial(b, cx, cy) {
   const d = Math.hypot(nx, ny) || 1;
   const ux = nx / d, uy = ny / d;
   const dot = b.vx * ux + b.vy * uy;
-  b.vx -= 2 * dot * ux; b.vy -= 2 * dot * uy;
+  if (dot < 0) {
+    b.vx -= 2 * dot * ux; b.vy -= 2 * dot * uy;
+  }
   fixAngle(b);
 }
 
@@ -494,12 +511,18 @@ function moveBall(s, b, dt) {
       const bo = s.boss;
       const d0 = Math.hypot(px - bo.x, py - bo.y), d1 = Math.hypot(b.x - bo.x, b.y - bo.y);
       const outer = BOSS.shieldR + b.r, inner = BOSS.shieldR - b.r;
-      if ((d0 > outer && d1 <= outer) || (d0 < inner && d1 >= inner)) {
+      const movingInward = (b.vx * (b.x - bo.x) + b.vy * (b.y - bo.y)) < 0;
+      if ((d0 >= outer && d1 <= outer) && movingInward) {
         const idx = shieldSegmentAt(bo, b.x, b.y);
         if (bo.segments[idx].hp > 0) {
           damageSegment(s, idx, 1);
           b.x = px; b.y = py;
           reflectRadial(b, bo.x, bo.y);
+        }
+      } else if (d0 < inner && d1 >= inner && !movingInward) {
+        const idx = shieldSegmentAt(bo, b.x, b.y);
+        if (bo.segments[idx].hp > 0) {
+          damageSegment(s, idx, 1);
         }
       }
       if (Math.hypot(b.x - bo.x, b.y - bo.y) <= BOSS.coreR + b.r) {
@@ -544,8 +567,10 @@ export function step(s, dt, input = {}) {
   if (input.dir) setPaddleTarget(s, p.targetX + input.dir * 900 * dt);
   const half = paddleWidth(s) / 2;
   p.targetX = clamp(p.targetX, half, W - half);
+  const prevX = p.x;
   p.x += (p.targetX - p.x) * Math.min(1, dt * 28);
   p.x = clamp(p.x, half, W - half);
+  p.vx = dt > 0 ? (p.x - prevX) / dt : 0;
 
   // auto lasers
   if (T.laser > 0) {

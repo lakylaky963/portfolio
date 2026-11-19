@@ -119,7 +119,7 @@ test('armour reduces firewall damage but beam pierces it', () => {
   const fw = run('firewall'), beam = run('beam');
   // firewall tier 0: 8 dmg - 4 armour = 4 per hit, ~1.6 hits/s
   assert.ok(fw > 0 && fw <= 4 * 1.6 * 2 + 4, `firewall dealt ${fw}`);
-  assert.ok(beam > 26 * 1.9 * 0.95, `beam dealt ${beam}`);
+  assert.ok(beam > 28 * 1.9 * 0.95, `beam dealt ${beam}`);
   assert.ok(beam > fw * 3);
 });
 
@@ -256,6 +256,12 @@ test('abilities: EMP stuns and has a cooldown; Overclock boosts fire rate', () =
   assert.equal(E.useAbility(s2, 'overclock').ok, false);
   E.useAbility(s2, 'emp');
   assert.ok(s2.achievements.includes('both-abilities'));
+
+  // EMP damage scales with wave
+  const s3 = mk(); noTimer(s3); s3.wave = 10;
+  const e3 = enemyAt(s3, 5, 'bot', 10, true); e3.hp = e3.maxHp = 1000;
+  E.useAbility(s3, 'emp');
+  assert.equal(1000 - e3.hp, 25 + 9 * 4);
 });
 
 test('leaks cost lives and defeat triggers game over', () => {

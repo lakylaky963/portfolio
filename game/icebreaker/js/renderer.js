@@ -28,6 +28,8 @@ export class Renderer {
     this.shake = 0;
     this.hurtFlash = 0;
     this.clock = 0;
+    this.avgDt = 0.016;
+    this.lowQuality = false;
     this.trailAccum = 0;
     this.trailColorIdx = 0;
 
@@ -78,8 +80,11 @@ export class Renderer {
   }
 
   spawnParticles(x, y, color, count, speedMin = 40, speedMax = 200, size = 3, life = 0.45) {
-    for (let i = 0; i < count; i++) {
-      if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
+    const lowQ = this.avgDt > 0.025;
+    const emitCount = lowQ ? Math.min(4, Math.max(1, Math.ceil(count * 0.35))) : count;
+    const cap = lowQ ? Math.floor(MAX_PARTICLES * 0.45) : MAX_PARTICLES;
+    for (let i = 0; i < emitCount; i++) {
+      if (this.particles.length >= cap) this.particles.shift();
       const a = Math.random() * Math.PI * 2;
       const sp = speedMin + Math.random() * (speedMax - speedMin);
       this.particles.push({
@@ -192,6 +197,10 @@ export class Renderer {
   }
 
   updateVfx(state, dt) {
+    if (dt > 0) {
+      this.avgDt = this.avgDt * 0.9 + dt * 0.1;
+      this.lowQuality = this.avgDt > 0.025;
+    }
     this.clock += dt;
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 32);
     if (this.hurtFlash > 0) this.hurtFlash = Math.max(0, this.hurtFlash - dt * 1.8);
@@ -402,8 +411,10 @@ export class Renderer {
     // Crisp neon boundary
     ctx.strokeStyle = `rgba(255, 0, 60, ${0.7 + pulse * 0.3})`;
     ctx.lineWidth = 3;
-    ctx.shadowColor = '#ff003c';
-    ctx.shadowBlur = 16;
+    if (this.avgDt <= 0.025) {
+      ctx.shadowColor = '#ff003c';
+      ctx.shadowBlur = 16;
+    }
     ctx.strokeRect(-ARENA, -ARENA, ARENA * 2, ARENA * 2);
 
     // Dashed inner warning line
@@ -863,8 +874,10 @@ export class Renderer {
       ctx.save();
       ctx.translate(bl.x, bl.y);
       ctx.rotate(this.clock * 14 + bl.a);
-      ctx.shadowColor = '#ff3b3b';
-      ctx.shadowBlur = 10;
+      if (this.avgDt <= 0.025) {
+        ctx.shadowColor = '#ff3b3b';
+        ctx.shadowBlur = 10;
+      }
 
       // 4-tooth cyber-saw
       ctx.beginPath();
@@ -963,8 +976,10 @@ export class Renderer {
       ctx.arc(0, 0, w.range, startA, endA);
       ctx.strokeStyle = `rgba(255, 42, 109, ${t})`;
       ctx.lineWidth = 6 * t + 2;
-      ctx.shadowColor = '#ff2a6d';
-      ctx.shadowBlur = 16;
+      if (this.avgDt <= 0.025) {
+        ctx.shadowColor = '#ff2a6d';
+        ctx.shadowBlur = 16;
+      }
       ctx.stroke();
 
       ctx.beginPath();
@@ -987,8 +1002,10 @@ export class Renderer {
       ctx.lineTo(b.x2, b.y2);
       ctx.strokeStyle = `rgba(0, 240, 255, ${t * 0.42})`;
       ctx.lineWidth = b.width * (0.9 + (1 - t) * 0.5);
-      ctx.shadowColor = '#00f0ff';
-      ctx.shadowBlur = 22;
+      if (this.avgDt <= 0.025) {
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 22;
+      }
       ctx.stroke();
 
       // Inner bright core
@@ -1015,8 +1032,10 @@ export class Renderer {
       ctx.strokeStyle = col;
       ctx.globalAlpha = alpha * 0.9;
       ctx.lineWidth = 5 * alpha + 1.5;
-      ctx.shadowColor = col;
-      ctx.shadowBlur = 16;
+      if (this.avgDt <= 0.025) {
+        ctx.shadowColor = col;
+        ctx.shadowBlur = 16;
+      }
       ctx.stroke();
 
       ctx.globalAlpha = alpha * 0.14;

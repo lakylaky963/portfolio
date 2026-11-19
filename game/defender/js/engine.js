@@ -10,7 +10,7 @@ export const TOWER_KEYS = ['firewall', 'beam', 'mortar', 'tesla', 'cryo'];
 // Index 0..3 = base + 3 upgrade tiers.
 export const TOWERS = {
   firewall: { cost: 50,  range: [2.6, 2.9, 3.2, 3.6], dmg: [8, 14, 24, 42],     rate: [1.6, 1.9, 2.4, 3.0] },
-  beam:     { cost: 120, range: [2.8, 3.2, 3.6, 4.0], dps: [26, 48, 84, 140] }, // armour-piercing
+  beam:     { cost: 120, range: [2.8, 3.2, 3.6, 4.0], dps: [28, 54, 96, 165] }, // armour-piercing
   mortar:   { cost: 150, range: [3.2, 3.5, 3.8, 4.2], dmg: [34, 60, 100, 170],  rate: [0.6, 0.7, 0.8, 0.9], radius: [1.0, 1.1, 1.25, 1.4] },
   tesla:    { cost: 175, range: [2.4, 2.6, 2.9, 3.2], dmg: [16, 26, 42, 68],    rate: [1.0, 1.2, 1.4, 1.7], chain: [3, 4, 5, 7], chainRange: 1.8 },
   cryo:     { cost: 100, range: [2.2, 2.5, 2.8, 3.2], dmg: [2, 5, 9, 16],       rate: [0.8, 0.9, 1.0, 1.1], slow: [0.65, 0.5, 0.4, 0.3], slowTime: [1.2, 1.4, 1.6, 1.8] },
@@ -232,10 +232,11 @@ export function useAbility(s, name) {
   s.stats.used[name] = true;
   if (s.stats.used.emp && s.stats.used.overclock) award(s, 'both-abilities');
   if (name === 'emp') {
+    const dmg = 25 + Math.max(0, (s.wave || 1) - 1) * 4;
     for (const e of s.enemies.slice()) {
       if (e.dead) continue;
       e.stun = ENEMIES[e.type].boss ? 1.5 : 3;
-      hurt(s, e, 25, { pierce: true });
+      hurt(s, e, dmg, { pierce: true });
     }
     emit(s, { type: 'emp' });
   } else {

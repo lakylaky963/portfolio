@@ -13,7 +13,7 @@
   <div class="scanlines" aria-hidden="true"></div>
 
   <header id="hud">
-    <a class="hub-link cyber-clip-sm" id="hubLink" href="../">◢ CYBER HUB</a>
+    <a class="hub-link cyber-clip-sm" id="hubLink" href="../" data-i="hub">◢ CYBER HUB</a>
 
     <div class="hud-stats">
       <div class="stat">
@@ -103,6 +103,7 @@
           <div class="action-row">
             <button type="button" id="bResumePause" class="cyber-btn primary-btn" data-i="resume">RESUME</button>
             <button type="button" id="bMenuPause" class="cyber-btn ghost" data-i="selectArena">SELECT ARENA</button>
+            <a class="cyber-btn ghost" href="../" data-i="hub">◢ CYBER HUB</a>
           </div>
         </div>
 
@@ -125,14 +126,15 @@
           </div>
           <div class="rewards-bar cyber-clip-sm">
             <span data-i="earned">EARNED</span>
-            <b id="rEddies" class="c-yellow">+0 €$</b>
+            <b id="rEddies" class="c-yellow" dir="ltr">+0 €$</b>
             <span class="dot">·</span>
-            <b id="rXp" class="c-ok">+0 XP</b>
+            <b id="rXp" class="c-ok" dir="ltr">+0 XP</b>
           </div>
           <div class="action-row">
             <button type="button" id="bEndless" class="cyber-btn endless-btn" data-i="continueEndless" hidden>ENDLESS TRACE ∞</button>
             <button type="button" id="bRetry" class="cyber-btn primary-btn" data-i="retry">RE-JACK IN</button>
             <button type="button" id="bBackMenu" class="cyber-btn ghost" data-i="selectArena">SELECT ARENA</button>
+            <a class="cyber-btn ghost" href="../" data-i="hub">◢ CYBER HUB</a>
           </div>
         </div>
       </div>

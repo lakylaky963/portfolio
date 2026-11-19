@@ -2,7 +2,7 @@
 import {
   GAMES_META, ACHIEVEMENTS, STORAGE_KEY, AUTH_KEY, MIDRUN_PREFIX,
   getProfile, levelFromXp, achievementProgress,
-  getLang, setLang, getMuted, setMuted, getTheme, setTheme, nextTheme,
+  getLang, setLang, getMuted, setMuted, getTheme, setTheme, nextTheme, prevTheme,
   resetProfile, markLaunched, getGame,
   getAuth, signInOrRegister, signInHomelab, signOutAndFlush, fetchLeaderboard, hasMidRun, pullSession,
 } from '../shared/hub-sdk.js';
@@ -33,6 +33,7 @@ let profile = getProfile();
 let filter = 'all';
 let sel = -1;
 let bg = null;
+let previews = null;
 let activeTab = 'T';
 let lbGame = 'all';
 let selectedAvatar = 'netrunner';
@@ -143,12 +144,12 @@ function renderStats() {
 
 function countUp(el, to, prefix = '') {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const from = Number(el.dataset.v || 0);
+  const from = el.dataset.v !== undefined ? Number(el.dataset.v) : (el.id === 'stLevel' ? 1 : 0);
   el.dataset.v = String(to);
   if (reduce || from === to) { el.textContent = prefix + fmt(to); return; }
   const t0 = performance.now(), dur = 700;
   const step = (now) => {
-    const k = Math.min(1, (now - t0) / dur), e = 1 - (1 - k) ** 3;
+    const k = Math.max(0, Math.min(1, (now - t0) / dur)), e = 1 - (1 - k) ** 3;
     el.textContent = prefix + fmt(from + (to - from) * e);
     if (k < 1 && el.dataset.v === String(to)) requestAnimationFrame(step);
   };
@@ -178,7 +179,8 @@ function renderGrid() {
   });
   grid.innerHTML = cards.join('');
   applyFilter();
-  startPreviews($$('canvas[data-scene]', grid));
+  if (previews && previews.stop) previews.stop();
+  previews = startPreviews($$('canvas[data-scene]', grid));
 }
 
 function applyFilter() {
@@ -222,7 +224,7 @@ function renderDrawer() {
     const mins = Math.max(0, Math.floor((Date.now() - r.at) / 60000));
     return `<li class="run"><span class="run-stripe" style="background:${g.accent}"></span>
       <span class="run-name">${esc(field(g, 'title'))}</span><span class="run-score">${fmt(r.score)}</span>
-      <span class="run-sub">${esc(S().ago(mins))}${r.wave ? ` · ${esc(S().wave)} ${r.wave}` : ''} · +${fmt(r.eddies)} €$ · +${fmt(r.xp)} XP</span>
+      <span class="run-sub">${esc(S().ago(mins))}${r.wave ? ` · ${esc(S().wave)} ${r.wave}` : ''} · <span dir="ltr">+${fmt(r.eddies)} €$</span> · <span dir="ltr">+${fmt(r.xp)} XP</span></span>
       <span class="run-tags"><span class="${r.won ? 'w' : 'l'}">${r.won ? S().won : S().lost}</span>${r.best ? `<span class="b">${esc(S().newBest)}</span>` : ''}</span></li>`;
   }).join('') : `<li class="empty">${esc(S().noRuns)}</li>`;
 
@@ -384,7 +386,7 @@ function updateExpiryDisplay(auth) {
   }
   el.hidden = false;
   el.classList.toggle('expired', cd.expired);
-  el.textContent = cd.expired ? S().sessionExpired : S().expiresIn(cd.text);
+  el.textContent = cd.expired ? S().sessionExpired : S().expiresIn(`\u2066${cd.text}\u2069`);
 }
 
 function setSelectedAvatar(av) {
@@ -684,7 +686,8 @@ function bind() {
   $('#themes').addEventListener('keydown', (e) => {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
     e.preventDefault(); e.stopPropagation();
-    changeTheme(nextTheme(theme)); $(`[data-theme-btn="${theme}"]`).focus();
+    const fn = (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ? prevTheme : nextTheme;
+    changeTheme(fn(theme)); $(`[data-theme-btn="${theme}"]`).focus();
   });
   $('#filters').addEventListener('click', (e) => {
     const b = e.target.closest('[data-filter]'); if (!b) return;

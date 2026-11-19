@@ -218,6 +218,9 @@ test('theme persistence and validation', () => {
   assert.equal(sdk.setTheme('hotpink'), 'yellow');
   assert.equal(sdk.nextTheme('yellow'), 'cyan');
   assert.equal(sdk.nextTheme('crimson'), 'yellow');
+  assert.equal(sdk.prevTheme('yellow'), 'crimson');
+  assert.equal(sdk.prevTheme('cyan'), 'yellow');
+  assert.equal(sdk.prevTheme('crimson'), 'cyan');
 });
 
 test('lang and mute persistence', () => {

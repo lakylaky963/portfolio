@@ -53,11 +53,11 @@ export const WEAPONS = {
   swarm: {
     icon: '✶', color: '#b967ff',
     levels: [
-      { cd: 1.70, dmg: 14, count: 1, radius: 55, speed: 330 },
-      { cd: 1.55, dmg: 17, count: 2, radius: 60, speed: 340 },
-      { cd: 1.45, dmg: 20, count: 2, radius: 70, speed: 350 },
-      { cd: 1.30, dmg: 24, count: 3, radius: 78, speed: 360 },
-      { cd: 1.10, dmg: 30, count: 4, radius: 90, speed: 380 },
+      { cd: 1.90, dmg: 20, count: 1, radius: 55, speed: 330 },
+      { cd: 1.55, dmg: 22, count: 2, radius: 60, speed: 340 },
+      { cd: 1.45, dmg: 25, count: 2, radius: 70, speed: 350 },
+      { cd: 1.30, dmg: 28, count: 3, radius: 78, speed: 360 },
+      { cd: 1.10, dmg: 34, count: 4, radius: 90, speed: 380 },
     ],
   },
   orbital: {
@@ -206,7 +206,7 @@ export function spawnEnemy(s, type, x, y) {
   else hpMul = (1 + s.time / 110) * (s.endless ? 1.6 : 1);
   const hp = Math.round(d.hp * hpMul);
   const e = {
-    id: s.nextId++, type, x, y, r: d.r, hp, maxHp: hp, speed: d.speed,
+    id: s.nextId++, type, isBoss: type === 'boss', x, y, r: d.r, hp, maxHp: hp, speed: d.speed,
     vx: 0, vy: 0, kx: 0, ky: 0, flash: 0, slowT: 0, slowF: 1, bladeT: 0,
     mode: 'chase', t: 0, cd: d.fireCd ?? rrange(s, 1.5, 3), cd2: 6, spin: 0, dead: false,
   };
@@ -248,7 +248,15 @@ export function spawnBoss(s) {
 }
 
 function director(s, dt) {
-  if (s.time >= s.nextBossAt) { spawnBoss(s); s.nextBossAt += BOSS_INTERVAL; }
+  const bossAlive = s.enemies.some(e => (e.isBoss || e.type === 'boss') && !e.dead);
+  if (s.time >= s.nextBossAt) {
+    if (bossAlive && !s.endless) {
+      s.nextBossAt = s.time + dt;
+    } else {
+      spawnBoss(s);
+      s.nextBossAt += BOSS_INTERVAL;
+    }
+  }
   if (s.opts.noSpawn) return;
   if (s.time >= s.nextEliteAt) {
     const pt = edgePoint(s); spawnEnemy(s, 'elite', pt.x, pt.y);
@@ -258,8 +266,8 @@ function director(s, dt) {
   s.spawnT -= dt;
   while (s.spawnT <= 0) {
     const t = s.time;
-    const bossAlive = s.enemies.some(e => e.type === 'boss' && !e.dead);
-    s.spawnT += Math.max(0.13, 0.85 - t * 0.0026) * (bossAlive ? 1.6 : 1) * (s.endless ? 0.7 : 1);
+    const bossNow = s.enemies.some(e => (e.isBoss || e.type === 'boss') && !e.dead);
+    s.spawnT += Math.max(0.13, 0.85 - t * 0.0026) * (bossNow ? 1.6 : 1) * (s.endless ? 0.7 : 1);
     if (s.enemies.length >= MAX_ENEMIES) continue;
     const type = pickType(s);
     const pt = edgePoint(s);
@@ -529,7 +537,7 @@ function updateEnemies(s, edt, rdt) {
   for (const e of s.enemies) {
     if (e.dead) continue;
     if (e.flash > 0) e.flash -= rdt;
-    if (e.bladeT > 0) e.bladeT -= edt;
+    if (e.bladeT > 0) e.bladeT = Math.max(0, (e.bladeT || 0) - rdt);
     if (e.slowT > 0) { e.slowT -= edt; if (e.slowT <= 0) e.slowF = 1; }
     const m = edt * (e.slowT > 0 ? e.slowF : 1);
     const dx = p.x - e.x, dy = p.y - e.y, dist = Math.hypot(dx, dy) || 1;

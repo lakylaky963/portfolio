@@ -13,10 +13,11 @@ export function createRenderer(canvas) {
   let ctx = mainCtx;
   let W = 0, H = 0, cell = 40, ox = 0, oy = 0, dpr = 1, cols = 16, rows = 10;
   let bg = null, bgKey = '';
+  let avgDt = 0.016;
   const fx = { tracers: [], beams: new Map(), arcs: [], ripples: [], parts: [], floats: [], flash: 0, flashColor: '#fff', redFlash: 0, shake: 0, ocGlow: 0 };
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = Math.max(1, Math.floor(canvas.clientWidth)), h = Math.max(1, Math.floor(canvas.clientHeight));
     W = w; H = h;
     canvas.width = Math.floor(w * dpr); canvas.height = Math.floor(h * dpr);
@@ -84,41 +85,42 @@ export function createRenderer(canvas) {
   // ------------------------------------------------------------ effects intake
   function burst(x, y, color, n, speed = 2.5, size = 0.07, life = 0.5) {
     for (let i = 0; i < n; i++) {
+      if (fx.parts.length >= 240) break;
       const a = Math.random() * TAU, v = speed * (0.3 + Math.random() * 0.9);
       fx.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * (0.5 + Math.random() * 0.7), max: life, color, size: size * (0.6 + Math.random() * 0.8) });
     }
   }
-  const ripple = (x, y, r, color, life = 0.45) => fx.ripples.push({ x, y, r, color, life, max: life });
+  const ripple = (x, y, r, color, life = 0.45) => { if (fx.ripples.length < 30) fx.ripples.push({ x, y, r, color, life, max: life }); };
   const floater = (x, y, text, color, big) => { if (fx.floats.length < 70) fx.floats.push({ x, y, text, color, life: 0.9, max: 0.9, big }); };
 
   function handleEvents(events, state) {
     for (const e of events) {
       switch (e.type) {
         case 'shot':
-          fx.tracers.push({ x0: e.x, y0: e.y, x1: e.tx, y1: e.ty, life: 0.09, color: TOWER_COLOR.firewall });
+          if (fx.tracers.length < 80) fx.tracers.push({ x0: e.x, y0: e.y, x1: e.tx, y1: e.ty, life: 0.09, color: TOWER_COLOR.firewall });
           burst(e.tx, e.ty, TOWER_COLOR.firewall, 2, 1.2, 0.05, 0.25);
           break;
         case 'beam': fx.beams.set(e.id, { x0: e.x, y0: e.y, x1: e.tx, y1: e.ty, life: 0.07, level: e.level }); break;
         case 'splash':
-          fx.tracers.push({ x0: e.x, y0: e.y, x1: e.tx, y1: e.ty, life: 0.12, color: TOWER_COLOR.mortar, thick: 2 });
+          if (fx.tracers.length < 80) fx.tracers.push({ x0: e.x, y0: e.y, x1: e.tx, y1: e.ty, life: 0.12, color: TOWER_COLOR.mortar, thick: 2 });
           ripple(e.tx, e.ty, e.r, TOWER_COLOR.mortar, 0.4);
           burst(e.tx, e.ty, TOWER_COLOR.mortar, 14, 3, 0.08, 0.5);
           fx.shake = Math.max(fx.shake, 2);
           break;
-        case 'arc': fx.arcs.push({ pts: e.pts, life: 0.2, seed: Math.random() * 99 }); break;
+        case 'arc': if (fx.arcs.length < 40) fx.arcs.push({ pts: e.pts, life: 0.2, seed: Math.random() * 99 }); break;
         case 'pulse': ripple(e.x, e.y, e.r, TOWER_COLOR.cryo, 0.55); break;
         case 'hit': if (e.dmg >= 1 && fx.floats.length < 40) floater(e.x + (Math.random() - 0.5) * 0.4, e.y - 0.3, String(e.dmg), '#e8f4ff', false); break;
         case 'kill':
           burst(e.x, e.y, ENEMY_COLOR[e.enemy] || '#fff', e.boss ? 60 : 12, e.boss ? 6 : 3, e.boss ? 0.14 : 0.07, e.boss ? 1.1 : 0.5);
           burst(e.x, e.y, AMBER, e.boss ? 20 : 4, 2, 0.05, 0.6);
-          floater(e.x, e.y - 0.1, '+' + e.bounty, AMBER, e.boss);
+          floater(e.x, e.y - 0.1, '+€$' + e.bounty, AMBER, e.boss);
           if (e.boss) { fx.shake = 12; fx.flash = 0.5; fx.flashColor = '#fcee09'; ripple(e.x, e.y, 3, '#ff003c', 0.8); }
           break;
         case 'split': ripple(e.x, e.y, 0.8, '#00ff9f', 0.35); break;
         case 'leak': fx.redFlash = e.boss ? 0.7 : 0.35; fx.shake = Math.max(fx.shake, e.boss ? 14 : 6); break;
         case 'place': ripple(e.x, e.y, 0.9, '#00ff9f', 0.35); break;
         case 'upgrade': ripple(e.x, e.y, 1.1, AMBER, 0.5); burst(e.x, e.y, AMBER, 14, 2.5, 0.06, 0.6); break;
-        case 'sell': burst(e.x, e.y, AMBER, 10, 2, 0.06, 0.5); floater(e.x, e.y - 0.3, '+' + e.value, AMBER, false); break;
+        case 'sell': burst(e.x, e.y, AMBER, 10, 2, 0.06, 0.5); floater(e.x, e.y - 0.3, '+€$' + e.value, AMBER, false); break;
         case 'emp': fx.flash = 0.8; fx.flashColor = '#00f0ff'; fx.shake = 8; if (state) { ripple(state.cols / 2, state.rows / 2, 18, '#00f0ff', 0.9); ripple(state.cols / 2, state.rows / 2, 12, '#ff003c', 0.7); ripple(state.cols / 2, state.rows / 2, 7, '#fcee09', 0.55); } break;
         case 'overclock': fx.ocGlow = 1; break;
         case 'clear': break;
@@ -284,6 +286,8 @@ export function createRenderer(canvas) {
   // ------------------------------------------------------------ main draw
   function render(s, view, dt) {
     if (!W) resize();
+    avgDt = avgDt * 0.9 + dt * 0.1;
+    const lowPerf = avgDt > 0.025;
     const key = s.map.id + '|' + W + 'x' + H + '|' + dpr;
     if (key !== bgKey || !bg) { bgKey = key; buildBg(s); }
     const time = view.time || 0;
@@ -383,16 +387,16 @@ export function createRenderer(canvas) {
     // shots
     for (const tr of fx.tracers) {
       ctx.globalAlpha = Math.min(1, tr.life / 0.08); ctx.strokeStyle = tr.color; ctx.lineWidth = (tr.thick || 1.5) * (cell / 40);
-      ctx.shadowColor = tr.color; ctx.shadowBlur = 8;
+      if (!lowPerf) { ctx.shadowColor = tr.color; ctx.shadowBlur = 8; }
       ctx.beginPath(); ctx.moveTo(ox + tr.x0 * cell, oy + tr.y0 * cell); ctx.lineTo(ox + tr.x1 * cell, oy + tr.y1 * cell); ctx.stroke();
-      ctx.shadowBlur = 0;
+      if (!lowPerf) ctx.shadowBlur = 0;
     }
     ctx.globalAlpha = 1;
     for (const ar of fx.arcs) {
       ctx.globalAlpha = Math.min(1, ar.life / 0.12);
-      ctx.shadowColor = CYAN; ctx.shadowBlur = 14;
+      if (!lowPerf) { ctx.shadowColor = CYAN; ctx.shadowBlur = 14; }
       ctx.strokeStyle = 'rgba(0,240,255,.55)'; ctx.lineWidth = cell * 0.12; jagged(ar.pts, ar.seed, 0.45);
-      ctx.shadowBlur = 0;
+      if (!lowPerf) ctx.shadowBlur = 0;
       ctx.strokeStyle = '#eaffff'; ctx.lineWidth = Math.max(1.5, cell * 0.04); jagged(ar.pts, ar.seed, 0.45);
       ctx.strokeStyle = 'rgba(252,238,9,.8)'; ctx.lineWidth = Math.max(1, cell * 0.015); jagged(ar.pts, ar.seed + 5, 0.6);
     }
@@ -434,7 +438,7 @@ export function createRenderer(canvas) {
 
   /** Draw a tower sprite into a small standalone canvas (used for the build palette). */
   function paintIcon(cv, type) {
-    const d = Math.min(window.devicePixelRatio || 1, 3), size = cv.clientWidth || 40;
+    const d = Math.min(2, window.devicePixelRatio || 1), size = cv.clientWidth || 40;
     cv.width = cv.height = Math.floor(size * d);
     ctx = cv.getContext('2d');
     ctx.setTransform(d, 0, 0, d, 0, 0);

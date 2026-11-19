@@ -30,6 +30,7 @@ export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d', { alpha: false });
   let dpr = 1;
   let animT = 0;
+  let avgDt = 1 / 60;
 
   const fx = {
     particles: [],
@@ -75,6 +76,7 @@ export function createRenderer(canvas) {
 
   function spawnRing(x, y, maxR, color, dur = 0.38, width = 4) {
     fx.rings.push({ x, y, r: 8, maxR, color, life: dur, maxLife: dur, width });
+    if (fx.rings.length > 30) fx.rings.splice(0, fx.rings.length - 30);
   }
 
   function clearFx() {
@@ -84,6 +86,7 @@ export function createRenderer(canvas) {
     fx.shake = 0;
     fx.flash = 0;
     fx.stageBanner = null;
+    avgDt = 1 / 60;
   }
 
   function pushEvent(ev, lang = 'en') {
@@ -95,7 +98,7 @@ export function createRenderer(canvas) {
         fx.shake = Math.min(10, fx.shake + (ev.combo >= 8 ? 2.4 : 1.1));
         if (ev.combo >= 5 && ev.combo % 5 === 0) {
           const mult = comboMultiplier(ev.combo).toFixed(1);
-          spawnPopup(ev.x, ev.y - 8, `${ev.combo}× COMBO (${mult}×)`, '#fcee09', 1.18);
+          spawnPopup(ev.x, ev.y - 8, `${ev.combo}× ${t(lang, 'combo')} (${mult}×)`, '#fcee09', 1.18);
         } else if (ev.combo >= 3) {
           spawnPopup(ev.x, ev.y - 4, `${ev.combo}×`, col, 0.92);
         }
@@ -205,6 +208,7 @@ export function createRenderer(canvas) {
 
   function update(dt) {
     animT += dt;
+    if (dt > 0) avgDt = avgDt * 0.9 + dt * 0.1;
     if (fx.shake > 0) fx.shake = Math.max(0, fx.shake - dt * 32);
     if (fx.flash > 0) fx.flash = Math.max(0, fx.flash - dt * 1.4);
     if (fx.stageBanner) {
@@ -240,7 +244,7 @@ export function createRenderer(canvas) {
     }
   }
 
-  function drawBackground(s) {
+  function drawBackground(s, lang = 'en') {
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, '#060811');
     grad.addColorStop(0.55, '#090c17');
@@ -286,12 +290,13 @@ export function createRenderer(canvas) {
     ctx.stroke();
 
     // Subtle stage watermark at top-left
+    const curLang = lang || (typeof document !== 'undefined' && document.documentElement.lang) || 'en';
     const st = stageFor(s.level);
     ctx.fillStyle = 'rgba(180, 186, 208, 0.35)';
-    ctx.font = '600 11px "Plex Mono", monospace';
+    ctx.font = '600 11px "Plex Mono", "Plex Sans Hebrew", monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`SECTOR ${String(s.level).padStart(2, '0')} // ${st.name}`, 18, 14);
+    ctx.fillText(stageTitle(curLang, s.level, st.name), 18, 14);
   }
 
   function drawBrick(br) {
@@ -457,7 +462,7 @@ export function createRenderer(canvas) {
     ctx.restore();
   }
 
-  function drawBoss(s) {
+  function drawBoss(s, lang = 'en') {
     const bo = s.boss;
     if (!bo || !bo.alive) return;
     ctx.save();
@@ -542,11 +547,12 @@ export function createRenderer(canvas) {
     ctx.lineWidth = 1;
     ctx.strokeRect(bx - 2, by - 2, barW + 4, barH + 4);
 
+    const curLang = lang || (typeof document !== 'undefined' && document.documentElement.lang) || 'en';
     ctx.fillStyle = '#f0f2fa';
-    ctx.font = '700 10px "Plex Mono", monospace';
+    ctx.font = '700 10px "Plex Mono", "Plex Sans Hebrew", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(`ICE CORE // ${bo.hp}/${bo.maxHp}`, bo.x, by - 4);
+    ctx.fillText(`${t(curLang, 'iceCore')} // ${bo.hp}/${bo.maxHp}`, bo.x, by - 4);
     ctx.restore();
   }
 
@@ -575,8 +581,10 @@ export function createRenderer(canvas) {
   function drawLasers(s) {
     if (!s.lasers.length) return;
     ctx.save();
-    ctx.shadowColor = '#ff003c';
-    ctx.shadowBlur = 12;
+    if (avgDt <= 0.025) {
+      ctx.shadowColor = '#ff003c';
+      ctx.shadowBlur = 12;
+    }
     for (const l of s.lasers) {
       const g = ctx.createLinearGradient(l.x, l.y - 16, l.x, l.y + 8);
       g.addColorStop(0, '#ffffff');
@@ -594,13 +602,16 @@ export function createRenderer(canvas) {
 
   function drawCapsules(s) {
     if (!s.capsules.length) return;
+    const lowQuality = avgDt > 0.025;
     ctx.save();
     for (const c of s.capsules) {
       const st = PU_STYLE[c.kind] || PU_STYLE.multi;
       const x = c.x - c.w / 2;
       const y = c.y - c.h / 2;
-      ctx.shadowColor = st.glow;
-      ctx.shadowBlur = 14;
+      if (!lowQuality) {
+        ctx.shadowColor = st.glow;
+        ctx.shadowBlur = 14;
+      }
       chamferPath(ctx, x, y, c.w, c.h, 5);
       ctx.fillStyle = st.bg;
       ctx.fill();
@@ -791,8 +802,10 @@ export function createRenderer(canvas) {
       ctx.arc(b.x, b.y, b.r * 2.2, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = pierce ? 18 : 12;
+      if (avgDt <= 0.025) {
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur = pierce ? 18 : 12;
+      }
       ctx.fillStyle = innerColor;
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
@@ -944,12 +957,12 @@ export function createRenderer(canvas) {
       ctx.translate(sx, sy);
     }
 
-    drawBackground(s);
+    drawBackground(s, lang);
     drawMagShield(s);
     for (const br of s.bricks) {
       if (br.alive) drawBrick(br);
     }
-    drawBoss(s);
+    drawBoss(s, lang);
     drawPulses(s);
     drawLasers(s);
     drawCapsules(s);

@@ -65,7 +65,9 @@ kbd {
 }
 
 .hub-link {
-  --c: var(--yellow);
+  --c: var(--accent);
+  min-height: 44px;
+  min-width: 44px;
   padding: 0.48em 0.85em;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
@@ -83,9 +85,9 @@ kbd {
   margin: 0;
   font: 700 0.95rem/1.05 var(--mono);
   letter-spacing: 0.14em;
-  color: var(--yellow);
+  color: var(--accent);
   text-transform: uppercase;
-  text-shadow: 0 0 12px rgba(252, 238, 9, 0.35);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 40%, transparent);
   white-space: nowrap;
 }
 
@@ -93,7 +95,7 @@ kbd {
   font: 500 0.65rem/1.2 var(--mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--accent-2);
   opacity: 0.85;
   white-space: nowrap;
 }
@@ -115,10 +117,10 @@ kbd {
   padding: 4px 10px 5px;
   background: rgba(7, 8, 13, 0.78);
   border: 1px solid var(--line);
-  border-inline-start: 2px solid var(--cyan);
+  border-inline-start: 2px solid var(--accent-2);
 }
 
-.stat-pill.stat-eddies { border-inline-start-color: var(--yellow); }
+.stat-pill.stat-eddies { border-inline-start-color: var(--accent); }
 .stat-pill.stat-score { border-inline-start-color: var(--ok); min-width: 96px; }
 .stat-pill.stat-combo { border-inline-start-color: var(--magenta); min-width: 82px; }
 .stat-pill.stat-districts.critical {
@@ -218,7 +220,10 @@ kbd {
 .hud-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 6px 10px;
   background: var(--raised);
   color: var(--text);
@@ -232,22 +237,23 @@ kbd {
 }
 
 .hud-btn:hover {
-  background: rgba(0, 240, 255, 0.12);
-  color: var(--cyan);
-  box-shadow: inset 0 0 0 1px var(--cyan);
+  background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+  color: var(--accent-2);
+  box-shadow: inset 0 0 0 1px var(--accent-2);
 }
 
 .hud-btn[aria-pressed="true"] {
   background: rgba(255, 0, 60, 0.2);
-  color: var(--yellow);
+  color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--magenta);
 }
 
 .hud-btn.lang-btn {
-  min-width: 40px;
+  min-width: 44px;
+  min-height: 44px;
   justify-content: center;
-  color: var(--yellow);
-  box-shadow: inset 0 0 0 1px rgba(252, 238, 9, 0.45);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 /* ==================== STAGE / CANVAS ==================== */
@@ -263,16 +269,18 @@ kbd {
 
 .canvas-frame {
   position: relative;
-  height: 100%;
-  max-height: 100%;
+  width: 100%;
   max-width: 100%;
+  max-height: 100%;
   aspect-ratio: 16 / 10;
+  height: auto;
+  margin: auto;
   background: #04060d;
   border: 1px solid var(--line-strong);
   box-shadow:
-    0 0 0 1px rgba(0, 240, 255, 0.18),
+    0 0 0 1px color-mix(in srgb, var(--accent-2) 22%, transparent),
     0 12px 42px rgba(0, 0, 0, 0.7),
-    inset 0 0 32px rgba(0, 240, 255, 0.08);
+    inset 0 0 32px color-mix(in srgb, var(--accent-2) 10%, transparent);
   overflow: hidden;
   transition: box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
 }
@@ -329,10 +337,11 @@ kbd {
   padding: 6px 10px;
   background: linear-gradient(180deg, rgba(14, 16, 25, 0.96), rgba(8, 10, 17, 0.98));
   border: 1px solid var(--line-strong);
-  border-top: 2px solid rgba(0, 240, 255, 0.45);
+  border-top: 2px solid color-mix(in srgb, var(--accent-2) 55%, var(--line));
 }
 
 .batteries-group {
+  direction: ltr;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
@@ -569,9 +578,9 @@ kbd {
   padding: 24px 26px;
   background:
     linear-gradient(160deg, rgba(22, 25, 38, 0.98), rgba(10, 12, 20, 0.98));
-  border: 1px solid var(--line-strong);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line-strong));
   box-shadow:
-    0 0 0 1px rgba(252, 238, 9, 0.22),
+    0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
     0 24px 64px rgba(0, 0, 0, 0.85);
 }
 
@@ -582,7 +591,7 @@ kbd {
   font: 600 0.72rem/1.2 var(--mono);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--accent-2);
   margin-bottom: 6px;
 }
 
@@ -591,8 +600,8 @@ kbd {
   font: 700 clamp(1.35rem, 3vw, 2rem)/1.08 var(--mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--yellow);
-  text-shadow: 0 0 18px rgba(252, 238, 9, 0.35);
+  color: var(--accent);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
 .glitch-title {
@@ -678,11 +687,11 @@ kbd {
 }
 
 .primary-cta {
-  --c: var(--yellow);
+  --c: var(--accent);
   color: var(--accent-ink);
   padding: 0.95em 1.5em;
   font-size: 0.9rem;
-  box-shadow: 0 0 22px rgba(252, 238, 9, 0.25);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .resume-saved-btn {
@@ -794,8 +803,8 @@ kbd {
 }
 
 .up-card:hover:not(.disabled) {
-  border-color: var(--cyan);
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.18);
+  border-color: var(--accent-2);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 22%, transparent);
   transform: translateY(-1px);
 }
 
@@ -825,9 +834,9 @@ kbd {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: rgba(0, 240, 255, 0.12);
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  color: var(--cyan);
+  background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent);
+  color: var(--accent-2);
   font: 700 0.9rem/1 var(--mono);
   flex-shrink: 0;
 }
@@ -848,7 +857,7 @@ kbd {
 .up-lvl {
   font: 600 0.68rem/1 var(--mono);
   letter-spacing: 0.08em;
-  color: var(--cyan);
+  color: var(--accent-2);
   white-space: nowrap;
 }
 
@@ -867,8 +876,8 @@ kbd {
 }
 
 .up-pips > i.on {
-  background: var(--yellow);
-  box-shadow: 0 0 6px rgba(252, 238, 9, 0.5);
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
 .up-desc {
@@ -878,7 +887,10 @@ kbd {
 }
 
 .up-buy-btn {
-  --c: var(--yellow);
+  --c: var(--accent);
+  color: var(--accent-ink);
+  min-height: 44px;
+  min-width: 44px;
   width: 100%;
   padding: 0.62em 0.9em;
   font-size: 0.74rem;
@@ -1082,7 +1094,14 @@ kbd {
 @media (max-width: 620px) {
   .app-shell { padding: 4px 6px 6px; gap: 5px; }
   .brand-title { font-size: 0.8rem; }
+  .hud-btn { min-height: 44px; min-width: 44px; padding: 6px 8px; }
   .hud-btn .btn-txt { display: none; }
+  .batteries-group { gap: 5px; }
+  .bat-card { font-size: 0.66rem; padding: 4px 6px; gap: 4px; }
+  .bat-head { font-size: 0.66rem; gap: 4px; }
+  .abilities-group { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .ab-inner { padding: 6px 8px; }
+  .ab-name { font-size: 0.68rem; white-space: normal; overflow-wrap: anywhere; }
   .shop-grid { grid-template-columns: 1fr; }
   .end-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .modal { padding: 16px; }

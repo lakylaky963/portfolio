@@ -45,11 +45,16 @@ let preview = createGame({ arena: selectedArena, seed: 2077 });
 let running = false;
 let paused = false;
 let recorded = false;
+let recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
+let lastRecordResult = null;
 let lastTs = 0;
 let accMs = 0;
 let bannerTimer = 0;
+let bannerSpec = null;
 let pendingOverlayTimer = 0;
 let lastCrashCause = 'wall';
+let lastRoundOverlayKind = 'roundClear';
+let lastEndIsVictory = false;
 let savedRecord = null;
 
 // ---------- Hub SDK init (safely wrapped) ----------
@@ -84,6 +89,7 @@ function makeSnapshot() {
   return {
     label: t(lang, 'saveInfo', game.round, game.score, arenaName(game.arenaId)),
     state: serializeState(game),
+    recordedTotals: { ...recordedTotals },
   };
 }
 
@@ -127,9 +133,24 @@ function refreshSavedCard() {
   }
 }
 
-function showBanner(text, ms = 1600) {
+function formatBannerSpec(spec) {
+  if (!spec) return '';
+  if (spec.kind === 'roundArena') {
+    return `${t(lang, 'popRound')} ${spec.round} // ${arenaName(spec.arenaId)}`;
+  }
+  if (spec.kind === 'roundNext') {
+    return `${t(lang, 'popRound')} ${spec.round}${spec.endless ? ' ∞' : ''}`;
+  }
+  if (spec.kind === 'endless') {
+    return `${t(lang, 'continueEndless')} // ${t(lang, 'popRound')} ${spec.round}`;
+  }
+  return String(spec.text || '');
+}
+
+function showBanner(specOrText, ms = 1600) {
   const b = $('banner');
-  b.textContent = text;
+  bannerSpec = typeof specOrText === 'object' ? specOrText : { kind: 'raw', text: specOrText };
+  b.textContent = formatBannerSpec(bannerSpec);
   b.hidden = false;
   bannerTimer = ms;
 }
@@ -137,6 +158,7 @@ function showBanner(text, ms = 1600) {
 function hideBanner() {
   $('banner').hidden = true;
   bannerTimer = 0;
+  bannerSpec = null;
 }
 
 function syncMuteBtn() {
@@ -178,6 +200,17 @@ function applyLang() {
   } else if (!$('pauseBody').hidden) {
     $('ovTitle').textContent = t(lang, 'pausedTitle');
     $('ovSub').textContent = arenaName(game ? game.arenaId : selectedArena);
+  } else if (!$('roundBody').hidden && game) {
+    renderRoundOverlayText(lastRoundOverlayKind);
+  } else if (!$('endBody').hidden && game) {
+    $('ovTitle').textContent = t(lang, lastEndIsVictory ? 'victoryTitle' : 'gameOverTitle');
+    $('ovSub').textContent = t(lang, lastEndIsVictory ? 'victorySub' : 'gameOverSub');
+    const rewards = computeRewards(game);
+    $('rEddies').textContent = `+${rewards.eddies.toLocaleString()} €$`;
+    $('rXp').textContent = `+${rewards.xp.toLocaleString()} ${t(lang, 'xp')}`;
+  }
+  if (!$('banner').hidden && bannerSpec) {
+    $('banner').textContent = formatBannerSpec(bannerSpec);
   }
   updateHud();
 }
@@ -212,8 +245,7 @@ function showPauseOverlay() {
   showOverlayView('pause', t(lang, 'pausedTitle'), arenaName(game ? game.arenaId : selectedArena));
 }
 
-function showRoundOverlay(kind) {
-  running = false;
+function renderRoundOverlayText(kind) {
   const isClear = kind === 'roundClear';
   const title = t(lang, isClear ? 'roundClearTitle' : 'lifeLostTitle');
   const sub = t(lang, isClear ? 'roundClearSub' : 'lifeLostSub');
@@ -227,30 +259,53 @@ function showRoundOverlay(kind) {
     detail.innerHTML = `<b>${causeTxt}</b> · ${t(lang, 'lives')}: <b>${'◆'.repeat(Math.max(0, game.lives))}</b>`;
     $('bContinueRound').textContent = t(lang, 'retryRoundBtn');
   }
+  $('ovTitle').textContent = title;
+  $('ovSub').textContent = sub;
+  return { title, sub };
+}
+
+function showRoundOverlay(kind) {
+  running = false;
+  lastRoundOverlayKind = kind;
+  const { title, sub } = renderRoundOverlayText(kind);
   showOverlayView('round', title, sub);
+}
+
+function commitRunRecord() {
+  if (!game || recorded) return lastRecordResult;
+  recorded = true;
+  const rewards = computeRewards(game);
+  const deltaEddies = Math.max(0, rewards.eddies - (recordedTotals.eddies || 0));
+  const deltaXp = Math.max(0, rewards.xp - (recordedTotals.xp || 0));
+  const wonThisRecord = !game.endless && !!game.won && !recordedTotals.won;
+  recordedTotals = {
+    score: Math.max(recordedTotals.score || 0, game.score),
+    eddies: rewards.eddies,
+    xp: rewards.xp,
+    won: recordedTotals.won || !!game.won,
+  };
+  try {
+    lastRecordResult = recordRun(GAME_ID, {
+      score: game.score,
+      eddies: deltaEddies,
+      xp: deltaXp,
+      won: wonThisRecord,
+      wave: game.round,
+    });
+  } catch (e) {
+    console.warn('recordRun failed:', e);
+  }
+  removeCheckpoint();
+  return lastRecordResult;
 }
 
 function finishRun(isVictory) {
   running = false;
   paused = false;
+  lastEndIsVictory = !!isVictory;
   syncPauseBtn();
   const rewards = computeRewards(game);
-  let res = null;
-  if (!recorded) {
-    recorded = true;
-    try {
-      res = recordRun(GAME_ID, {
-        score: game.score,
-        eddies: rewards.eddies,
-        xp: rewards.xp,
-        won: !!game.won,
-        wave: game.round,
-      });
-    } catch (e) {
-      console.warn('recordRun failed:', e);
-    }
-  }
-  removeCheckpoint();
+  const res = commitRunRecord();
 
   $('rScore').textContent = game.score.toLocaleString();
   $('rRounds').textContent = String(game.roundsCleared);
@@ -279,6 +334,8 @@ function startNewRun() {
     seed: (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) | 0,
   });
   recorded = false;
+  recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
+  lastRecordResult = null;
   paused = false;
   running = true;
   accMs = 0;
@@ -286,7 +343,7 @@ function startNewRun() {
   syncPauseBtn();
   hideOverlay();
   updateHud();
-  showBanner(`${t(lang, 'popRound')} ${game.round} // ${arenaName(game.arenaId)}`, 1500);
+  showBanner({ kind: 'roundArena', round: game.round, arenaId: game.arenaId }, 1500);
 }
 
 function resumeSavedRun() {
@@ -304,6 +361,15 @@ function resumeSavedRun() {
   selectedArena = game.arenaId;
   syncArenaSelection();
   recorded = false;
+  recordedTotals = savedRecord.recordedTotals
+    ? {
+        score: Number(savedRecord.recordedTotals.score) || 0,
+        eddies: Number(savedRecord.recordedTotals.eddies) || 0,
+        xp: Number(savedRecord.recordedTotals.xp) || 0,
+        won: !!savedRecord.recordedTotals.won,
+      }
+    : { score: 0, eddies: 0, xp: 0, won: false };
+  lastRecordResult = null;
   paused = false;
   accMs = 0;
   lastTs = performance.now();
@@ -313,7 +379,7 @@ function resumeSavedRun() {
 
   if (game.phase === 'playing') {
     running = true;
-    showBanner(`${t(lang, 'popRound')} ${game.round} // ${arenaName(game.arenaId)}`, 1400);
+    showBanner({ kind: 'roundArena', round: game.round, arenaId: game.arenaId }, 1400);
   } else if (game.phase === 'roundClear') {
     showRoundOverlay('roundClear');
   } else if (game.phase === 'dead') {
@@ -342,14 +408,15 @@ function continueAfterRound() {
   syncPauseBtn();
   updateHud();
   persistCheckpoint();
-  showBanner(`${t(lang, 'popRound')} ${game.round}${game.endless ? ' ∞' : ''}`, 1300);
+  showBanner({ kind: 'roundNext', round: game.round, endless: game.endless }, 1300);
 }
 
 function enterEndless() {
   if (!game || game.phase !== 'victory') return;
   audio.unlock();
   nextRound(game);
-  recorded = false; // Allow recording endless run score on final gameover
+  recorded = false; // Allow recording incremental endless run delta on final gameover
+  lastRecordResult = null;
   renderer.clearEffects();
   hideOverlay();
   running = true;
@@ -359,7 +426,7 @@ function enterEndless() {
   syncPauseBtn();
   updateHud();
   persistCheckpoint();
-  showBanner(`${t(lang, 'continueEndless')} // ${t(lang, 'popRound')} ${game.round}`, 1700);
+  showBanner({ kind: 'endless', round: game.round }, 1700);
 }
 
 function setPausedState(next) {
@@ -474,8 +541,10 @@ function frame(now) {
           persistCheckpoint();
           pendingOverlayTimer = setTimeout(() => showRoundOverlay(phase), phase === 'roundClear' ? 700 : 820);
         } else if (phase === 'victory') {
+          commitRunRecord();
           pendingOverlayTimer = setTimeout(() => finishRun(true), 950);
         } else if (phase === 'gameover') {
+          commitRunRecord();
           pendingOverlayTimer = setTimeout(() => finishRun(false), 900);
         }
         break;
@@ -522,10 +591,34 @@ const KEY_TO_DIR = {
   arrowright: 'right', d: 'right',
 };
 
-window.addEventListener('keydown', (e) => {
-  const k = e.key.toLowerCase();
+const CODE_TO_DIR = {
+  ArrowUp: 'up', KeyW: 'up',
+  ArrowDown: 'down', KeyS: 'down',
+  ArrowLeft: 'left', KeyA: 'left',
+  ArrowRight: 'right', KeyD: 'right',
+};
 
-  if (k === 'p' || k === 'escape') {
+function toggleMute() {
+  const next = !audio.muted;
+  audio.setMuted(next);
+  if (!next) audio.unlock();
+  try { setHubMuted(audio.muted); } catch (e) { console.warn('setHubMuted failed:', e); }
+  syncMuteBtn();
+}
+
+window.addEventListener('keydown', (e) => {
+  const k = (e.key || '').toLowerCase();
+  const code = e.code || '';
+
+  if (k === 'm' || code === 'KeyM') {
+    if (!e.repeat) {
+      e.preventDefault();
+      toggleMute();
+    }
+    return;
+  }
+
+  if (k === 'p' || k === 'escape' || code === 'KeyP' || code === 'Escape') {
     if (running) {
       e.preventDefault();
       togglePause();
@@ -533,7 +626,11 @@ window.addEventListener('keydown', (e) => {
     return;
   }
 
-  if (k === 'enter' && !$('overlay').hidden) {
+  if ((k === 'enter' || code === 'Enter' || code === 'NumpadEnter') && !$('overlay').hidden) {
+    const active = document.activeElement;
+    if (active && $('overlay').contains(active) && (active.tagName === 'BUTTON' || active.tagName === 'A')) {
+      return;
+    }
     e.preventDefault();
     if (!$('menuBody').hidden) startNewRun();
     else if (!$('pauseBody').hidden) setPausedState(false);
@@ -542,7 +639,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
 
-  if (k === ' ') {
+  if (k === ' ' || code === 'Space') {
     e.preventDefault();
     if (!$('roundBody').hidden && !$('overlay').hidden) {
       continueAfterRound();
@@ -552,13 +649,13 @@ window.addEventListener('keydown', (e) => {
     return;
   }
 
-  if (k === 'shift') {
+  if (k === 'shift' || code === 'ShiftLeft' || code === 'ShiftRight') {
     e.preventDefault();
     if (!e.repeat) handleBoost(true);
     return;
   }
 
-  const dir = KEY_TO_DIR[k];
+  const dir = CODE_TO_DIR[code] || KEY_TO_DIR[k];
   if (dir) {
     e.preventDefault();
     if (!e.repeat) handleSteer(dir);
@@ -566,7 +663,9 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.key.toLowerCase() === 'shift') handleBoost(false);
+  const k = (e.key || '').toLowerCase();
+  const code = e.code || '';
+  if (k === 'shift' || code === 'ShiftLeft' || code === 'ShiftRight') handleBoost(false);
 });
 
 // Touch Swipe Gestures directly on canvas
@@ -660,12 +759,7 @@ $('bBackMenu').addEventListener('click', () => {
   showMenu();
 });
 
-$('bMute').addEventListener('click', () => {
-  audio.unlock();
-  audio.setMuted(!audio.muted);
-  try { setHubMuted(audio.muted); } catch (e) { console.warn('setHubMuted failed:', e); }
-  syncMuteBtn();
-});
+$('bMute').addEventListener('click', toggleMute);
 
 $('bLang').addEventListener('click', () => {
   lang = lang === 'en' ? 'he' : 'en';

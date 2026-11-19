@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './js/engine.js';
+import { t, stageTitle } from './js/i18n.js';
 
 const EMPTY = ['............'];
 const run = (s, secs, dt = 1 / 120, input = {}) => { for (let t = 0; t < secs; t += dt) E.step(s, dt, input); };
@@ -365,4 +366,60 @@ test('run rewards report score, eddies, xp and stage', () => {
   assert.equal(r.eddies, 120);
   assert.equal(r.wave, 4);
   assert.ok(r.xp > 0 && r.won === false);
+});
+
+test('boss shield does not trap ball inside when exiting outward through a live segment', () => {
+  const s = E.createGame({ layout: EMPTY, boss: true });
+  const bo = s.boss;
+  bo.t = 0;
+  bo.shieldAngle = 0;
+  bo.spin = 0;
+  const live = bo.segments.findIndex((g) => g.hp > 0);
+  const ang = (live + 0.5) * (Math.PI * 2 / E.BOSS.segments);
+  // Start inside the shield ring (between coreR and shieldR - r) moving outward
+  const startR = E.BOSS.coreR + E.BALL_R + 4;
+  const b = freeBall(
+    s,
+    bo.x + Math.cos(ang) * startR,
+    bo.y + Math.sin(ang) * startR,
+    Math.cos(ang) * 400,
+    Math.sin(ang) * 400,
+  );
+  E.step(s, 0.04);
+  E.step(s, 0.04);
+  E.step(s, 0.04);
+  const distFromBoss = Math.hypot(b.x - bo.x, b.y - bo.y);
+  assert.ok(distFromBoss > E.BOSS.shieldR + E.BALL_R, 'ball exited outward past the shield ring');
+  assert.ok(b.vx * Math.cos(ang) + b.vy * Math.sin(ang) > 0, 'ball continues moving outward');
+  assert.ok(bo.segments[live].hp < E.BOSS.segHp, 'live segment took damage on exit');
+});
+
+test('moving paddle before serve varies launch angle while stationary serve stays deterministic', () => {
+  const s0 = E.createGame({ layout: EMPTY });
+  E.launch(s0);
+  const vx0 = s0.balls[0].vx;
+
+  const sRight = E.createGame({ layout: EMPTY });
+  E.setPaddleTarget(sRight, E.W / 2 + 180);
+  E.step(sRight, 1 / 60);
+  E.launch(sRight);
+  const vxRight = sRight.balls[0].vx;
+
+  const sLeft = E.createGame({ layout: EMPTY });
+  E.setPaddleTarget(sLeft, E.W / 2 - 180);
+  E.step(sLeft, 1 / 60);
+  E.launch(sLeft);
+  const vxLeft = sLeft.balls[0].vx;
+
+  assert.notEqual(vxRight, vx0, 'moving right changes launch horizontal velocity');
+  assert.ok(vxRight > 0 && vxLeft < 0, 'moving right aims right, moving left aims left');
+});
+
+test('i18n stageTitle and Hebrew strings are localized properly', () => {
+  assert.equal(stageTitle('en', 1, 'BOOT SECTOR'), 'SECTOR 01 // BOOT SECTOR');
+  assert.equal(stageTitle('he', 1, 'BOOT SECTOR'), 'סקטור 01 // סקטור אתחול');
+  assert.equal(stageTitle('he', 'BOOT SECTOR'), 'סקטור אתחול');
+  assert.equal(t('he', 'puShield'), 'מגן מגנטי');
+  assert.equal(t('he', 'gameOverTitle'), 'הליבה קרסה');
+  assert.equal(t('he', 'iceCore'), 'ליבת קרח');
 });

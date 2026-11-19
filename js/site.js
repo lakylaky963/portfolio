@@ -38,7 +38,7 @@
   // ---------- live data from the homelab dashboard ----------
   const base = ($('meta[name="api-base"]')?.content || '/').replace(/\/?$/, '/');
   const api = (path) => fetch(base + path, { headers: { accept: 'application/json' } }).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); });
-  const HIDDEN = new Set([102]); // a friend's container: never shown here
+  const HIDDEN = new Set([102]);
   // Labels: English by default, Hebrew when <html lang="he">. Numbers stay Latin and left-to-right.
   const he = root.lang === 'he';
   const T = he
@@ -63,7 +63,12 @@
   function stats() {
     return api('api/stats').then((s) => {
       const guests = (s.guests || []).filter((g) => !HIDDEN.has(g.id));
-      for (const g of guests) for (const el of $$(`[data-ct="${g.id}"]`)) { el.dataset.state = g.status === 'running' ? 'up' : 'down'; el.dataset.from = 'stats'; }
+      for (const g of guests) {
+        const state = g.status === 'running' ? 'up' : 'down';
+        for (const el of $$(`[data-ct="${g.id}"]`)) { el.dataset.state = state; el.dataset.from = 'stats'; }
+        if (g.id === 105) $$('[data-site="dashboard"]').forEach((el) => { el.dataset.state = state; });
+        if (g.id === 101) $$('[data-site="route:game"]').forEach((el) => { if (!el.dataset.state) el.dataset.state = state; });
+      }
       back($('[data-readout]'));
       $$('[data-host-dot]').forEach((d) => { d.dataset.state = 'up'; });
       const running = guests.filter((g) => g.status === 'running').length;
@@ -103,6 +108,11 @@
       box.innerHTML = html; back(box);
       // The answer itself came through the proxy and the dashboard, so those two are up.
       mark(101, 'up'); mark(105, 'up'); $$('[data-host-dot]').forEach((d) => { d.dataset.state = 'up'; });
+      $$('[data-site="dashboard"]').forEach((d) => { d.dataset.state = 'up'; });
+      const gd = sites['route:game'] || sites.game;
+      const gl = gd && gd.buckets ? [...gd.buckets].reverse().find((b) => b[1] !== null) : null;
+      const gs = gl ? (gl[1] >= 0.5 ? 'up' : 'down') : 'up';
+      $$('[data-site="route:game"]').forEach((d) => { d.dataset.state = gs; });
       const vals = shown.map(([id]) => sites[id].pct).filter((v) => typeof v === 'number');
       const foot = $('[data-foot-uptime]');
       if (foot && vals.length) foot.textContent = T.foot((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));

@@ -18,7 +18,15 @@ function clearMid() {
   try { localStorage.removeItem(MIDRUN_KEY); } catch (e) { /* ignore */ }
 }
 
-const $ = (id) => document.getElementById(id);
+const el = (id) => document.getElementById(id);
+
+const DAEMON_KEY = {
+  DATAMINE_V1: 'dm1',
+  DATAMINE_V2: 'dm2',
+  ICEPICK: 'ice',
+  MASS_VULN: 'mass',
+  BLACKWALL_SIPHON: 'bw',
+};
 
 let run = null;
 let breach = null;
@@ -39,7 +47,12 @@ let chrome = { lang: 'en', muted: false };
 chrome = hub(HubSDK.initGameChrome, {
   gameId: 'protocol',
   onLangChange: (l) => applyLang(l, false),
-  onMuteChange: (m) => { muted = !!m; sfx.setMuted(muted); $('muteBtn').textContent = muted ? t('muted') : t('mute'); },
+  onMuteChange: (m) => {
+    muted = !!m;
+    sfx.setMuted(muted);
+    el('muteBtn').textContent = muted ? t('muted') : t('mute');
+    el('muteBtn').setAttribute('aria-label', muted ? t('unmuteLabel') : t('muteLabel'));
+  },
 }) || chrome;
 muted = !!chrome.muted;
 
@@ -50,9 +63,12 @@ function applyLang(l, syncHub = true) {
   document.documentElement.lang = next;
   document.documentElement.dir = next === 'he' ? 'rtl' : 'ltr';
   document.title = t('title');
-  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
-  $('langBtn').textContent = next === 'he' ? 'EN' : 'עב';
-  $('muteBtn').textContent = muted ? t('muted') : t('mute');
+  document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
+  el('langBtn').textContent = next === 'he' ? 'EN' : 'עב';
+  el('langBtn').setAttribute('aria-label', t('langLabel'));
+  el('muteBtn').textContent = muted ? t('muted') : t('mute');
+  el('muteBtn').setAttribute('aria-label', muted ? t('unmuteLabel') : t('muteLabel'));
+  if (el('grid')) el('grid').setAttribute('aria-label', t('matrixLabel'));
   updatePauseBtn();
   if (syncHub) hub(HubSDK.setLang, next);
   if (run) { paint(); if (phase !== 'play' || paused) renderOverlay(); }
@@ -172,7 +188,7 @@ function restoreProtocolState(snap) {
 }
 
 function updatePauseBtn() {
-  const btn = $('pauseBtn');
+  const btn = el('pauseBtn');
   if (!btn) return;
   btn.hidden = phase !== 'play';
   btn.textContent = paused ? '▶' : '❚❚';
@@ -230,7 +246,7 @@ function beginBreach() {
 }
 
 function buildGrid() {
-  const g = $('grid');
+  const g = el('grid');
   g.innerHTML = '';
   g.style.gridTemplateColumns = `repeat(${breach.size}, 1fr)`;
   cells = [];
@@ -295,13 +311,14 @@ function finishBreach() {
   renderOverlay();
 }
 
-function finishRun(won) {
+function finishRun(cashedOut = false) {
   clearMid();
   if (recorded) return;
   recorded = true;
+  const won = Boolean(cashedOut || run.won || run.cleared >= 5);
   const badges = run.badges.slice();
   hub(HubSDK.recordRun, 'protocol', {
-    score: run.score, eddies: totalEarned, xp: run.xp, won, wave: Math.max(1, run.cleared || run.tier), badges,
+    score: run.score, eddies: totalEarned, xp: run.xp, won, wave: run.tier, badges,
   });
 }
 
@@ -320,13 +337,13 @@ function fmtTime(s) { return s.toFixed(1); }
 
 function paint() {
   if (!breach) return;
-  $('sTier').textContent = breach.tier;
-  $('sTierName').textContent = tierLabel(breach.tier);
-  $('sStreak').textContent = run.streak;
-  $('sEddies').textContent = run.eddies;
-  $('sScore').textContent = run.score;
-  const ts = $('timerStat');
-  $('sTimer').textContent = fmtTime(breach.timeLeft) + t('sec');
+  el('sTier').textContent = breach.tier;
+  el('sTierName').textContent = tierLabel(breach.tier);
+  el('sStreak').textContent = run.streak;
+  el('sEddies').textContent = '€$' + run.eddies;
+  el('sScore').textContent = run.score;
+  const ts = el('timerStat');
+  el('sTimer').textContent = fmtTime(breach.timeLeft) + t('sec');
   ts.classList.toggle('warn', breach.started && breach.timeLeft < 5 && breach.status === 'active');
   ts.classList.toggle('frozen', breach.freezeLeft > 0 || paused);
 
@@ -352,7 +369,7 @@ function paint() {
   });
 
   // buffer
-  const buf = $('buffer');
+  const buf = el('buffer');
   buf.innerHTML = '';
   for (let i = 0; i < breach.bufferSize; i++) {
     const d = document.createElement('div');
@@ -364,17 +381,17 @@ function paint() {
   lastBufLen = breach.buffer.length;
 
   // daemons
-  const dm = $('daemons');
+  const dm = el('daemons');
   dm.innerHTML = '';
   const sts = E.allDaemonStatus(breach);
   breach.daemons.forEach((d, i) => {
     const st = sts[i];
-    const row = document.createElement('div');
-    row.className = 'daemon ' + st.status;
+    const rowEl = document.createElement('div');
+    rowEl.className = 'daemon ' + st.status;
     const name = document.createElement('div');
     name.className = 'dname';
     name.innerHTML = '<span></span><i></i>';
-    name.firstChild.textContent = d.type;
+    name.firstChild.textContent = t(DAEMON_KEY[d.type] || d.type);
     name.lastChild.textContent = t('r_' + d.type);
     const seq = document.createElement('div');
     seq.className = 'dseq';
@@ -387,30 +404,30 @@ function paint() {
     const pill = document.createElement('span');
     pill.className = 'pill';
     pill.textContent = t(st.status);
-    row.append(name, seq, pill);
-    dm.appendChild(row);
+    rowEl.append(name, seq, pill);
+    dm.appendChild(rowEl);
   });
 
   // quickhacks
   const inv = breach.inv;
-  $('cFreeze').textContent = inv.freeze; $('cFlip').textContent = inv.flip; $('cHint').textContent = inv.hint;
-  $('qFreeze').disabled = !act || !breach.started || inv.freeze <= 0 || breach.freezeLeft > 0;
-  $('qFlip').disabled = !act || breach.path.length === 0 || inv.flip <= 0;
-  $('qHint').disabled = !act || inv.hint <= 0;
-  $('execBtn').disabled = !act || !sts.some((s) => s.status === 'uploaded');
-  $('status').textContent = paused ? t('paused') : (act ? (breach.started ? t('running') + ' — ' + (breach.axis === 'row' ? 'ROW ' : 'COL ') + (breach.index + 1) : t('waiting')) : '');
+  el('cFreeze').textContent = inv.freeze; el('cFlip').textContent = inv.flip; el('cHint').textContent = inv.hint;
+  el('qFreeze').disabled = !act || !breach.started || inv.freeze <= 0 || breach.freezeLeft > 0;
+  el('qFlip').disabled = !act || breach.path.length === 0 || inv.flip <= 0;
+  el('qHint').disabled = !act || inv.hint <= 0;
+  el('execBtn').disabled = !act || !sts.some((s) => s.status === 'uploaded');
+  el('status').textContent = paused ? t('paused') : (act ? (breach.started ? t('running') + ' — ' + (breach.axis === 'row' ? t('rowAxis') : t('colAxis')) + (breach.index + 1) : t('waiting')) : '');
 }
 
 /* ---------- Overlays ---------- */
 function showOverlay(html, cls) {
-  const m = $('modal');
+  const m = el('modal');
   m.className = 'modal ' + (cls || '');
   m.innerHTML = html;
-  $('overlay').hidden = false;
+  el('overlay').hidden = false;
   const f = m.querySelector('button');
   if (f) f.focus();
 }
-function hideOverlay() { $('overlay').hidden = true; }
+function hideOverlay() { el('overlay').hidden = true; }
 const row = (a, b, cls = '') => `<div class="${cls}"><span>${a}</span><b>${b}</b></div>`;
 
 function renderOverlay() {
@@ -421,9 +438,10 @@ function renderOverlay() {
         ${row(t('timer'), fmtTime(breach.timeLeft) + t('sec'))}
         ${row(t('score'), run.score)}
       </div>
-      <div class="btnrow"><button class="resume-btn" id="resumeNowBtn">${t('resume')}</button><a class="ghost" id="pauseHubBtn" style="text-align:center;text-decoration:none" href="../">${t('hub')}</a></div>`);
-    $('resumeNowBtn').onclick = () => setPaused(false);
-    $('pauseHubBtn').onclick = () => saveProtocolMidRun();
+      <div class="btnrow"><button class="resume-btn" id="resumeNowBtn">${t('resume')}</button><button class="ghost" id="pauseRebootBtn">${t('again')}</button><a class="ghost" id="pauseHubBtn" style="text-align:center;text-decoration:none" href="../">${t('hub')}</a></div>`);
+    el('resumeNowBtn').onclick = () => setPaused(false);
+    el('pauseRebootBtn').onclick = () => newRun();
+    el('pauseHubBtn').onclick = () => saveProtocolMidRun();
     return;
   }
   if (phase === 'start') {
@@ -436,29 +454,29 @@ function renderOverlay() {
       ${hasSaved ? `<div class="btnrow"><button class="resume-btn" id="resumeSavedBtn">${t('resumeSaved')}${savedMeta}</button></div>` : ''}
       <div class="btnrow"><button class="primary" id="goBtn">${t('start')}</button></div>`);
     if (hasSaved) {
-      $('resumeSavedBtn').onclick = () => {
+      el('resumeSavedBtn').onclick = () => {
         sfx.unlock();
         if (!restoreProtocolState(saved)) { clearMid(); renderOverlay(); }
       };
     }
-    $('goBtn').onclick = () => { sfx.unlock(); newRun(); };
+    el('goBtn').onclick = () => { sfx.unlock(); newRun(); };
   } else if (phase === 'summary') {
     const r = summary.res, b = r.breakdown;
     const full = r.outcome === 'full';
     showOverlay(`<h1>${t('complete')}</h1><p>${full ? t('sweepTitle') : t('partialTitle')} — ${tierLabel(summary.tierBefore)}</p>
       <div class="rows">
-        ${row(t('baseReward'), '+' + b.baseEddies + ' $ / ' + b.baseScore)}
+        ${row(t('baseReward'), '+' + b.baseEddies + ' €$ / ' + b.baseScore)}
         ${b.scoreMult > 1 ? row(t('scoreMult'), '×' + b.scoreMult) : ''}
-        ${full ? row(t('fullSweepBonus'), '+' + b.fullSweepEddies + ' $ / ' + b.fullSweepScore) : ''}
+        ${full ? row(t('fullSweepBonus'), '+' + b.fullSweepEddies + ' €$ / ' + b.fullSweepScore) : ''}
         ${row(t('speedBonus'), '+' + b.speedScore)}
         ${row(t('streakMult'), '×' + b.streakMult.toFixed(1))}
         ${r.bonusTime ? row(t('bonusTime'), '+' + r.bonusTime + t('sec')) : ''}
-        ${row(t('earnedEddies'), r.eddies + ' $', 'tot')}
+        ${row(t('earnedEddies'), r.eddies + ' €$', 'tot')}
         ${row(t('score'), '+' + r.score, 'tot')}
         ${row(t('earnedXp'), '+' + r.xp, 'tot')}
       </div>
       <div class="btnrow"><button class="primary" id="shopBtn">${t('next')}</button></div>`, 'ok');
-    $('shopBtn').onclick = () => { phase = 'shop'; saveProtocolMidRun(); renderOverlay(); };
+    el('shopBtn').onclick = () => { phase = 'shop'; saveProtocolMidRun(); renderOverlay(); };
   } else if (phase === 'shop') {
     renderShop();
   } else if (phase === 'end') {
@@ -466,33 +484,33 @@ function renderOverlay() {
     showOverlay(`<h1>${lost ? t('traceTitle') : t('cashedOut')}</h1><p>${lost ? t('traceSub') : t('runEnd')}</p>
       <div class="rows">
         ${row(t('reached'), t('tierWord') + ' ' + (lost ? run.tier : run.tier - 1) + ' — ' + tierLabel(lost ? run.tier : run.tier - 1))}
-        ${row(t('earnedEddies'), totalEarned + ' $', 'tot')}
+        ${row(t('earnedEddies'), totalEarned + ' €$', 'tot')}
         ${row(t('score'), run.score, 'tot')}
         ${row(t('earnedXp'), '+' + run.xp, 'tot')}
       </div>
       <div class="btnrow"><button class="primary" id="againBtn">${t('again')}</button><a class="ghost" style="text-align:center;text-decoration:none" href="../">${t('hub')}</a></div>`, lost ? 'bad' : 'ok');
-    $('againBtn').onclick = () => newRun();
+    el('againBtn').onclick = () => newRun();
   }
 }
 
 function renderShop() {
   const items = [
     ['buffer', t('buffSlot'), `${run.bufferSize}/${E.MAX_BUFFER}`],
-    ['time', t('timeAdd'), `+${run.timeBonus}${t('sec')}`],
+    ['time', t('timeAdd'), `+${run.timeBonus}/${E.MAX_TIME_BONUS}${t('sec')}`],
     ['freeze', t('freeze'), `${t('owned')} ${run.inv.freeze}`],
     ['flip', t('flip'), `${t('owned')} ${run.inv.flip}`],
     ['hint', t('hint'), `${t('owned')} ${run.inv.hint}`],
   ];
   const html = items.map(([id, name, note]) => {
-    const maxed = id === 'buffer' && run.bufferSize >= E.MAX_BUFFER;
+    const maxed = (id === 'buffer' && run.bufferSize >= E.MAX_BUFFER) || (id === 'time' && run.timeBonus >= E.MAX_TIME_BONUS);
     const price = E.SHOP[id].price(run);
     const dis = maxed || run.eddies < price;
     return `<div class="shop-item"><span>${name}<small>${note}</small></span>
-      <button data-buy="${id}" ${dis ? 'disabled' : ''}>${maxed ? t('maxed') : t('buy') + ' ' + price + ' $'}</button></div>`;
+      <button data-buy="${id}" ${dis ? 'disabled' : ''}>${maxed ? t('maxed') : t('buy') + ' ' + price + ' €$'}</button></div>`;
   }).join('');
-  showOverlay(`<h1>${t('shop')}</h1><p>${t('shopSub')} — ${t('eddies')}: <b>${run.eddies} $</b> · ${t('tier')} ${run.tier}: ${tierLabel(run.tier)}</p>${html}
+  showOverlay(`<h1>${t('shop')}</h1><p>${t('shopSub')} — ${t('eddies')}: <b>${run.eddies} €$</b> · ${t('tier')} ${run.tier}: ${tierLabel(run.tier)}</p>${html}
     <div class="btnrow"><button class="primary" id="nextBtn">${t('nextServer')}</button><button class="ghost" id="cashBtn">${t('cashOut')}</button></div>`);
-  $('modal').querySelectorAll('[data-buy]').forEach((b) => {
+  el('modal').querySelectorAll('[data-buy]').forEach((b) => {
     b.onclick = () => {
       const r = E.buy(run, b.dataset.buy);
       if (r.ok) { sfx.buy(); saveProtocolMidRun(); } else sfx.deny();
@@ -500,55 +518,65 @@ function renderShop() {
       renderShop();
     };
   });
-  $('nextBtn').onclick = () => beginBreach();
-  $('cashBtn').onclick = () => cashOut();
+  el('nextBtn').onclick = () => beginBreach();
+  el('cashBtn').onclick = () => cashOut();
 }
-function paintHudOnly() { $('sEddies').textContent = run.eddies; }
+function paintHudOnly() { el('sEddies').textContent = '€$' + run.eddies; }
 
 /* ---------- Input ---------- */
-function quick(fn) {
+function quick(kind) {
   if (phase !== 'play' || paused) return;
   sfx.unlock();
+  const fn = kind === 'freeze' ? E.useFreeze : kind === 'flip' ? E.useFlip : E.useHint;
   const r = fn(breach);
-  if (r.ok) { sfx.freeze(); } else sfx.deny();
+  if (r.ok) {
+    if (kind === 'freeze') sfx.freeze();
+    else if (kind === 'flip') sfx.whoosh();
+    else if (kind === 'hint') sfx.pick();
+  } else {
+    sfx.deny();
+  }
   paint();
 }
-$('qFreeze').onclick = () => quick(E.useFreeze);
-$('qFlip').onclick = () => quick((b) => { const r = E.useFlip(b); if (r.ok) sfx.whoosh(); return r; });
-$('qHint').onclick = () => quick(E.useHint);
-$('execBtn').onclick = () => {
+el('qFreeze').onclick = () => quick('freeze');
+el('qFlip').onclick = () => quick('flip');
+el('qHint').onclick = () => quick('hint');
+el('execBtn').onclick = () => {
   if (phase !== 'play' || paused) return;
   const r = E.executeEarly(breach);
-  if (!r.ok) { sfx.deny(); $('status').textContent = t('noDaemon'); return; }
+  if (!r.ok) { sfx.deny(); el('status').textContent = t('noDaemon'); return; }
   finishBreach();
 };
-$('pauseBtn').onclick = togglePause;
-$('hubLink').onclick = () => saveProtocolMidRun();
-$('langBtn').onclick = () => applyLang(getLang() === 'he' ? 'en' : 'he', true);
-$('muteBtn').onclick = () => setMute(!muted);
+el('pauseBtn').onclick = togglePause;
+el('hubLink').onclick = () => saveProtocolMidRun();
+el('langBtn').onclick = () => applyLang(getLang() === 'he' ? 'en' : 'he', true);
+el('muteBtn').onclick = () => setMute(!muted);
 function setMute(m) {
   muted = m;
   sfx.setMuted(m);
-  $('muteBtn').textContent = m ? t('muted') : t('mute');
+  el('muteBtn').textContent = m ? t('muted') : t('mute');
+  el('muteBtn').setAttribute('aria-label', m ? t('unmuteLabel') : t('muteLabel'));
   hub(HubSDK.setMuted, m);
 }
 
 document.addEventListener('keydown', (e) => {
+  const k = (e.key || '').toLowerCase();
+  const code = e.code || '';
+  if (k === 'm' || code === 'KeyM') { setMute(!muted); return; }
   if (phase !== 'play' || !breach) return;
-  const k = e.key.toLowerCase();
-  if (k === 'p' || k === 'escape') { togglePause(); return; }
+  if (k === 'p' || code === 'KeyP' || k === 'escape' || code === 'Escape') { togglePause(); return; }
   if (paused) return;
   if (e.target && e.target.tagName === 'BUTTON' && e.target.classList.contains('cell') === false && e.key === 'Enter') return;
   const n = breach.size;
-  if (k === 'q') { quick(E.useFreeze); return; }
-  if (k === 'w') { quick(E.useFlip); return; }
-  if (k === 'e') { quick(E.useHint); return; }
+  if (k === 'q' || code === 'KeyQ') { quick('freeze'); return; }
+  if (k === 'w' || code === 'KeyW') { quick('flip'); return; }
+  if (k === 'e' || code === 'KeyE') { quick('hint'); return; }
   const d = { arrowleft: [0, -1], arrowright: [0, 1], arrowup: [-1, 0], arrowdown: [1, 0] }[k];
   if (d) {
     e.preventDefault();
     cursor = { r: (cursor.r + d[0] + n) % n, c: (cursor.c + d[1] + n) % n };
     paint();
-  } else if (k === 'enter' || k === ' ') {
+  } else if (k === 'enter' || k === ' ' || code === 'Space') {
     if (e.target && e.target.classList && e.target.classList.contains('cell')) e.preventDefault();
     if (e.target && e.target.tagName === 'BUTTON' && !e.target.classList.contains('cell')) return;
     doPick(cursor.r, cursor.c);
@@ -558,7 +586,7 @@ document.addEventListener('keydown', (e) => {
 // Auto-pause & mid-run save on tab-out / page hide via Hub SDK (with safe local fallback).
 const autoPauseOpts = {
   gameId: 'protocol',
-  isRunning: () => isRunActive(),
+  isRunning: () => phase === 'play' && !!run && run.status === 'playing',
   isPaused: () => paused,
   setPaused: (v) => setPaused(v),
   getSnapshot: () => protocolSnapshot(),
@@ -579,13 +607,18 @@ setInterval(() => {
   const dt = Math.min(0.5, (now - last) / 1000);
   last = now;
   if (phase !== 'play' || paused || !breach) return;
+  if (!breach.started) {
+    E.tick(breach, dt);
+    el('sTimer').textContent = fmtTime(breach.timeLeft) + t('sec');
+    return;
+  }
   const before = breach.timeLeft;
   E.tick(breach, dt);
-  if (breach.started && breach.freezeLeft <= 0 && breach.timeLeft < 5 && breach.timeLeft > 0) {
+  if (breach.freezeLeft <= 0 && breach.timeLeft < 5 && breach.timeLeft > 0) {
     const sec = Math.ceil(breach.timeLeft);
     if (sec !== lastWarnSec) { lastWarnSec = sec; sfx.tick(); }
   }
-  if (breach.timeLeft !== before || breach.freezeLeft > 0 || !breach.started) paint();
+  if (breach.timeLeft !== before || breach.freezeLeft > 0) paint();
   if (breach.status === 'done') finishBreach();
 }, 100);
 

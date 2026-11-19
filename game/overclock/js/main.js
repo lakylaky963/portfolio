@@ -1,6 +1,6 @@
 // OVERCLOCK // ICE Shatter — UI controller, input loop, Hub SDK & mid-run persistence.
 import {
-  W, CAMPAIGN_STAGES, SLOWMO_DURATION,
+  W, H, PADDLE_Y, CAMPAIGN_STAGES, SLOWMO_DURATION,
   createGame, step, setPaddleTarget, launch, fireLasers,
   activateSandevistan, continueEndless, drainEvents,
   comboMultiplier, runRewards,
@@ -89,6 +89,7 @@ let muted = false;
 let mode = 'start'; // 'start' | 'playing' | 'paused' | 'victory' | 'over'
 let autoPausedFlag = false;
 let runRecorded = false;
+let recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
 let lastHubResult = null;
 let state = createGame({ seed: Date.now() >>> 0 });
 
@@ -135,6 +136,7 @@ function makeSnapshot() {
   return {
     label: `S${state.level} • ${state.score.toLocaleString()}`,
     state: clone,
+    recordedTotals: { ...recordedTotals },
   };
 }
 
@@ -174,7 +176,9 @@ function renderResultBox(rewards, hubRes) {
   if (hubRes && hubRes.leveledUp) {
     badges.push(`<span class="r-badge xp">${t(lang, 'leveledUp', { lvl: hubRes.newLevel })}</span>`);
   }
-  const earnedXp = hubRes && Number.isFinite(hubRes.xpGained) ? hubRes.xpGained : rewards.xp;
+  const earnedXp = hubRes && Number.isFinite(hubRes.xpGained)
+    ? Math.max(rewards.xp, hubRes.xpGained)
+    : rewards.xp;
 
   resultBox.innerHTML = `
     ${badges.length ? `<div class="result-badges">${badges.join('')}</div>` : ''}
@@ -225,6 +229,8 @@ function refreshOverlay() {
     bPrimary.textContent = t(lang, 'resume');
     bRestart.hidden = false;
     bSaveExit.hidden = false;
+    bSaveExit.setAttribute('data-i', 'saveExit');
+    bSaveExit.textContent = t(lang, 'saveExit');
   } else if (mode === 'victory') {
     ovTitle.textContent = t(lang, 'victoryTitle');
     ovSub.textContent = t(lang, 'victorySub');
@@ -232,12 +238,18 @@ function refreshOverlay() {
     renderResultBox(runRewards(state), lastHubResult);
     bPrimary.textContent = t(lang, 'restart');
     bEndless.hidden = false;
+    bSaveExit.hidden = false;
+    bSaveExit.setAttribute('data-i', 'hub');
+    bSaveExit.textContent = t(lang, 'hub');
   } else if (mode === 'over') {
     ovTitle.textContent = t(lang, 'gameOverTitle');
     ovSub.textContent = t(lang, 'gameOverSub');
     resultBox.hidden = false;
     renderResultBox(runRewards(state), lastHubResult);
     bPrimary.textContent = t(lang, 'restart');
+    bSaveExit.hidden = false;
+    bSaveExit.setAttribute('data-i', 'hub');
+    bSaveExit.textContent = t(lang, 'hub');
   }
 }
 
@@ -249,6 +261,7 @@ function startNewRun() {
   drainEvents(state);
   renderer.clearFx();
   runRecorded = false;
+  recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
   lastHubResult = null;
   autoPausedFlag = false;
   mode = 'playing';
@@ -268,9 +281,24 @@ function resumeSavedRun() {
   }
   state = saved.state;
   if (!Array.isArray(state.events)) state.events = [];
+  if (!Array.isArray(state.powerups)) state.powerups = [];
   if (!Array.isArray(state.capsules)) state.capsules = [];
   if (!Array.isArray(state.lasers)) state.lasers = [];
   if (!Array.isArray(state.pulses)) state.pulses = [];
+  for (const b of state.balls) {
+    b.trail = Array.isArray(b.trail) ? b.trail : [];
+    if (!Number.isFinite(b.offset)) b.offset = 0;
+  }
+  if (saved.recordedTotals && typeof saved.recordedTotals === 'object') {
+    recordedTotals = {
+      score: Number(saved.recordedTotals.score) || 0,
+      eddies: Number(saved.recordedTotals.eddies) || 0,
+      xp: Number(saved.recordedTotals.xp) || 0,
+      won: !!saved.recordedTotals.won,
+    };
+  } else {
+    recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
+  }
   renderer.clearFx();
   runRecorded = false;
   lastHubResult = null;
@@ -305,8 +333,24 @@ function finalizeRun() {
   runRecorded = true;
   clearMidRunSafe();
   const rewards = runRewards(state);
+  const deltaEddies = Math.max(0, rewards.eddies - recordedTotals.eddies);
+  const deltaXp = Math.max(0, rewards.xp - recordedTotals.xp);
+  const wonNow = !state.endless && !recordedTotals.won && !!rewards.won;
+  const payload = {
+    score: rewards.score,
+    eddies: deltaEddies,
+    xp: deltaXp,
+    won: wonNow,
+    wave: rewards.wave,
+  };
+  recordedTotals = {
+    score: Math.max(recordedTotals.score, rewards.score),
+    eddies: Math.max(recordedTotals.eddies, rewards.eddies),
+    xp: Math.max(recordedTotals.xp, rewards.xp),
+    won: recordedTotals.won || !!rewards.won,
+  };
   if (hub && typeof hub.recordRun === 'function') {
-    lastHubResult = safeCall(hub.recordRun, GAME_ID, rewards);
+    lastHubResult = safeCall(hub.recordRun, GAME_ID, payload);
   }
 }
 
@@ -346,13 +390,14 @@ function updateHud() {
   bSande.disabled = mode !== 'playing' || (!ready && !slowActive);
 
   // Active status pills inside canvas corner
+  const secUnit = lang === 'he' ? 'ש׳' : 's';
   const pills = [];
-  if (state.timers.slowmo > 0) pills.push(['slowmo', `${t(lang, 'sandeActive')} ${state.timers.slowmo.toFixed(1)}s`]);
-  if (state.timers.wide > 0) pills.push(['wide', `${t(lang, 'puWide')} ${Math.ceil(state.timers.wide)}s`]);
-  if (state.timers.laser > 0) pills.push(['laser', `${t(lang, 'puLaser')} ${Math.ceil(state.timers.laser)}s`]);
-  if (state.timers.pierce > 0) pills.push(['pierce', `${t(lang, 'puPierce')} ${Math.ceil(state.timers.pierce)}s`]);
+  if (state.timers.slowmo > 0) pills.push(['slowmo', `${t(lang, 'sandeActive')} ${state.timers.slowmo.toFixed(1)}${secUnit}`]);
+  if (state.timers.wide > 0) pills.push(['wide', `${t(lang, 'puWide')} ${Math.ceil(state.timers.wide)}${secUnit}`]);
+  if (state.timers.laser > 0) pills.push(['laser', `${t(lang, 'puLaser')} ${Math.ceil(state.timers.laser)}${secUnit}`]);
+  if (state.timers.pierce > 0) pills.push(['pierce', `${t(lang, 'puPierce')} ${Math.ceil(state.timers.pierce)}${secUnit}`]);
   if (state.shield) pills.push(['shield', t(lang, 'puShield')]);
-  if (state.timers.stun > 0) pills.push(['stun', `${t(lang, 'statusStun')} ${state.timers.stun.toFixed(1)}s`]);
+  if (state.timers.stun > 0) pills.push(['stun', `${t(lang, 'statusStun')} ${state.timers.stun.toFixed(1)}${secUnit}`]);
 
   const key = pills.map((p) => p[0] + p[1]).join('|');
   if (key !== lastPillsKey) {
@@ -370,6 +415,14 @@ function clientXToField(clientX) {
   return ((clientX - rect.left) / rect.width) * W;
 }
 
+function clientYToField(clientY) {
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.height) return H / 2;
+  return ((clientY - rect.top) / rect.height) * H;
+}
+
+let touchServing = false;
+
 canvas.addEventListener('pointermove', (e) => {
   if (mode !== 'playing') return;
   setPaddleTarget(state, clientXToField(e.clientX));
@@ -378,28 +431,66 @@ canvas.addEventListener('pointermove', (e) => {
 canvas.addEventListener('pointerdown', (e) => {
   audio.unlock();
   if (mode !== 'playing') return;
-  setPaddleTarget(state, clientXToField(e.clientX));
+  const fx = clientXToField(e.clientX);
+  const fy = clientYToField(e.clientY);
+  setPaddleTarget(state, fx);
+  if (e.pointerType === 'touch') {
+    const hasAttached = state.balls.some((b) => b.attached);
+    if (hasAttached) {
+      if (fy < PADDLE_Y - 90) {
+        touchServing = false;
+        launch(state);
+      } else {
+        touchServing = true;
+        try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      }
+    } else {
+      fireLasers(state);
+    }
+    return;
+  }
   if (!launch(state)) fireLasers(state);
 });
 
-canvas.addEventListener('touchmove', (e) => {
-  if (mode !== 'playing' || !e.touches.length) return;
-  e.preventDefault();
-  setPaddleTarget(state, clientXToField(e.touches[0].clientX));
-}, { passive: false });
+canvas.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'touch' && touchServing) {
+    touchServing = false;
+    if (mode === 'playing') launch(state);
+  }
+});
+
+canvas.addEventListener('pointercancel', () => {
+  touchServing = false;
+});
 
 window.addEventListener('keydown', (e) => {
   const code = e.code;
   if (code === 'ArrowLeft' || code === 'KeyA') { keys.left = true; return; }
   if (code === 'ArrowRight' || code === 'KeyD') { keys.right = true; return; }
 
-  if (code === 'Space') {
+  if (code === 'Space' || code === 'Enter' || code === 'NumpadEnter') {
+    if (mode === 'playing') {
+      if (code === 'Space') {
+        e.preventDefault();
+        audio.unlock();
+        if (!launch(state)) fireLasers(state);
+      }
+      return;
+    }
+    const active = document.activeElement;
+    const isOtherButton = active
+      && active !== bPrimary
+      && active !== document.body
+      && active !== document.documentElement
+      && active !== canvas
+      && (active.tagName === 'BUTTON' || active.tagName === 'A');
+    if (isOtherButton) return;
     e.preventDefault();
     audio.unlock();
-    if (mode === 'playing') {
-      if (!launch(state)) fireLasers(state);
-    } else if (mode === 'paused') {
+    if (mode === 'paused') {
       setPaused(false);
+    } else if (mode === 'start' || mode === 'victory' || mode === 'over') {
+      startNewRun();
     }
     return;
   }
@@ -463,7 +554,8 @@ bResumeSaved.addEventListener('click', resumeSavedRun);
 bEndless.addEventListener('click', enterEndless);
 bRestart.addEventListener('click', startNewRun);
 
-bSaveExit.addEventListener('click', () => {
+bSaveExit.addEventListener('click', (e) => {
+  e.preventDefault();
   saveProgressNow();
   window.location.href = '../';
 });

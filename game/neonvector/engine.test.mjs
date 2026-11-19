@@ -245,3 +245,15 @@ test('kamikaze contact hurts the player', () => {
   run(s, 0.05);
   assert.equal(s.player.hull, CFG.maxHull - 1);
 });
+
+test('run starts with 25% overdrive and endless bullet speed scales smoothly past sector 5', () => {
+  const s = fresh();
+  assert.equal(s.overdrive, 25);
+  s.sector = 1; const b1 = E.ebullet(s, 100, 100, 0, 100);
+  s.sector = 5; const b5 = E.ebullet(s, 100, 100, 0, 100);
+  s.sector = 6; const b6 = E.ebullet(s, 100, 100, 0, 100);
+  s.sector = 9; const b9 = E.ebullet(s, 100, 100, 0, 100);
+  assert.ok(b5.vx > b1.vx);
+  assert.ok(b6.vx > b5.vx, 'sector 6 bullet speed continues scaling instead of wrapping to sector 1');
+  assert.ok(b9.vx > b6.vx);
+});

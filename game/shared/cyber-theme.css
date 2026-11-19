@@ -17,7 +17,7 @@
   --accent: #fcee09; --accent-2: #00f0ff; --accent-ink: #07080d;
 
   --sans: 'Plex Sans', 'Plex Sans Hebrew', system-ui, 'Segoe UI', sans-serif;
-  --mono: 'Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --mono: 'Plex Mono', 'Plex Sans Hebrew', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   --serif: 'Plex Serif', 'Frank Ruhl', Georgia, serif;
 
   --chamfer: 14px;
@@ -29,6 +29,7 @@
 [data-theme="cyan"] { --accent: #00f0ff; --accent-2: #fcee09; --accent-ink: #07080d; }
 [data-theme="crimson"] { --accent: #ff003c; --accent-2: #00f0ff; --accent-ink: #ffffff; }
 :root[lang="he"] { --sans: 'Plex Sans Hebrew', 'Plex Sans', system-ui, sans-serif; --serif: 'Frank Ruhl', 'Plex Serif', Georgia, serif; }
+:root[lang="he"] body, :root[lang="he"] button, :root[lang="he"] a, :root[lang="he"] span, :root[lang="he"] dt, :root[lang="he"] dd, :root[lang="he"] th, :root[lang="he"] h1, :root[lang="he"] h2, :root[lang="he"] h3, :root[lang="he"] p, :root[lang="he"] label, :root[lang="he"] legend { letter-spacing: 0; }
 
 /* Chamfered corners: top-left + bottom-right cut. Mirrored in RTL. */
 .cyber-clip {
@@ -47,7 +48,7 @@
 .cyber-btn {
   --c: var(--accent);
   display: inline-flex; align-items: center; justify-content: center; gap: .5em;
-  padding: .7em 1.3em; border: 0; cursor: pointer; text-decoration: none;
+  min-height: 44px; padding: .7em 1.3em; border: 0; cursor: pointer; text-decoration: none;
   font: 600 .82rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
   color: var(--accent-ink); background: var(--c);
   clip-path: polygon(var(--chamfer-sm) 0, 100% 0, 100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%, 0 100%, 0 var(--chamfer-sm));
@@ -83,7 +84,7 @@
   animation: cp77PillIn .28s var(--ease);
 }
 .cp77-autopause-pill:hover {
-  border-color: var(--yellow) !important;
+  border-color: var(--accent) !important;
   box-shadow: 0 0 26px rgba(252, 238, 9, 0.35), 0 8px 28px rgba(0, 0, 0, 0.7) !important;
 }
 @keyframes cp77PillIn {

@@ -28,6 +28,7 @@ import { t, getStrings, dirOf } from './i18n.js';
 import {
   initGameChrome,
   recordRun,
+  defaultRunXp,
   getProfile,
   markLaunched,
   setLang as setHubLang,
@@ -56,6 +57,7 @@ const cv = $('cv');
 const canvasFrame = $('canvasFrame');
 
 // HUD
+const hubLink = $('hubLink');
 const hudDistricts = $('hudDistricts');
 const hudDistrictPips = $('hudDistrictPips');
 const statDistricts = $('statDistricts');
@@ -140,6 +142,7 @@ let state = createGame({ seed: 2077 }); // ambient background state on start scr
 let started = false;
 let paused = false;
 let runRecorded = false;
+let recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
 let lastRunResult = null;
 let preferredBattery = null;
 let pointer = { x: W / 2, y: 360 };
@@ -174,6 +177,7 @@ function serializeState(s) {
     },
     stats: { ...s.stats },
     lastBonus: s.lastBonus ? { ...s.lastBonus } : null,
+    recordedTotals: { ...recordedTotals },
     events: [],
   };
   return {
@@ -189,6 +193,7 @@ function deserializeState(rec) {
   if (!Array.isArray(raw.batteries) || raw.batteries.length !== 3) return null;
   if (!raw.upgrades || !raw.abilities || !raw.stats) return null;
   if (raw.phase !== 'wave' && raw.phase !== 'shop') return null;
+  const rt = raw.recordedTotals && typeof raw.recordedTotals === 'object' ? raw.recordedTotals : {};
   const restored = {
     ...raw,
     blasts: Array.isArray(raw.blasts)
@@ -198,6 +203,12 @@ function deserializeState(rec) {
     interceptors: Array.isArray(raw.interceptors) ? raw.interceptors : [],
     queue: Array.isArray(raw.queue) ? raw.queue : [],
     chains: raw.chains && typeof raw.chains === 'object' ? raw.chains : {},
+    recordedTotals: {
+      score: Math.max(0, Math.floor(Number(rt.score) || 0)),
+      eddies: Math.max(0, Math.floor(Number(rt.eddies) || 0)),
+      xp: Math.max(0, Math.floor(Number(rt.xp) || 0)),
+      won: !!rt.won,
+    },
     events: [],
   };
   return restored;
@@ -304,6 +315,7 @@ function startNewRun() {
   started = true;
   paused = false;
   runRecorded = false;
+  recordedTotals = { score: 0, eddies: 0, xp: 0, won: false };
   lastRunResult = null;
   preferredBattery = null;
   batFlash = [0, 0, 0];
@@ -333,6 +345,9 @@ function resumeSavedRun() {
   started = true;
   paused = false;
   runRecorded = false;
+  recordedTotals = restored.recordedTotals
+    ? { ...restored.recordedTotals }
+    : { score: 0, eddies: 0, xp: 0, won: false };
   lastRunResult = null;
   preferredBattery = null;
 
@@ -414,7 +429,7 @@ function renderShop() {
 
     let lvlText = isMax ? t(lang, 'maxed') : t(lang, 'lvl', { l: curLvl, m: def.max });
     if (isRebuild) {
-      lvlText = destroyed.length > 0 ? `${destroyed.length} DOWN` : t(lang, 'maxed');
+      lvlText = destroyed.length > 0 ? `${destroyed.length} ${t(lang, 'downTag')}` : t(lang, 'maxed');
     }
 
     let pipsHtml = '';
@@ -475,17 +490,34 @@ function finishRun(isVictory) {
   if (!runRecorded) {
     runRecorded = true;
     const badges = runBadges(state);
+    const totalScore = Math.floor(state.score);
+    const totalEddies = Math.floor(state.stats.eddiesEarned);
+    const totalXp = defaultRunXp({
+      score: totalScore,
+      won: isVictory || recordedTotals.won || state.endless,
+    });
+    const deltaEddies = Math.max(0, totalEddies - (recordedTotals.eddies || 0));
+    const deltaXp = Math.max(1, totalXp - (recordedTotals.xp || 0));
+    const wonFlag = !!isVictory && !recordedTotals.won;
+
     lastRunResult = sdkCall(
       () =>
         recordRun(GAME_ID, {
-          score: Math.floor(state.score),
-          eddies: Math.floor(state.stats.eddiesEarned),
-          won: isVictory || state.endless,
+          score: totalScore,
+          eddies: deltaEddies,
+          xp: deltaXp,
+          won: wonFlag,
           wave: state.wave,
           badges,
         }),
       null,
     );
+    recordedTotals = {
+      score: Math.max(recordedTotals.score || 0, totalScore),
+      eddies: Math.max(recordedTotals.eddies || 0, totalEddies),
+      xp: (recordedTotals.xp || 0) + (lastRunResult && typeof lastRunResult.xpGained === 'number' ? lastRunResult.xpGained : deltaXp),
+      won: recordedTotals.won || !!isVictory,
+    };
     sdkCall(() => clearMidRun(GAME_ID));
   }
 
@@ -502,8 +534,8 @@ function renderEndModal(isVictory, res) {
   endKicker.textContent = isVictory
     ? state.endless
       ? t(lang, 'endlessTag')
-      : 'CAMPAIGN COMPLETE'
-    : 'BLACKWALL BREACHED';
+      : t(lang, 'kickerWin')
+    : t(lang, 'kickerLoss');
   endHeading.textContent = t(lang, isVictory ? 'winTitle' : 'overTitle');
   endBody.textContent = isVictory ? t(lang, 'winBody') : t(lang, 'overBody', { n: state.wave });
 
@@ -511,7 +543,7 @@ function renderEndModal(isVictory, res) {
   endNewBest.hidden = !(res && res.isNewBest);
   endWave.textContent = state.endless ? `${state.wave} (${t(lang, 'endlessTag')})` : `${state.wave}/${MAX_WAVES}`;
   endEddies.textContent = `€$ ${Math.floor(state.stats.eddiesEarned).toLocaleString()}`;
-  const xpGained = res && typeof res.xpGained === 'number' ? res.xpGained : Math.floor(10 + state.score / 50);
+  const xpGained = recordedTotals.xp || (res && typeof res.xpGained === 'number' ? res.xpGained : Math.floor(10 + state.score / 50));
   endXp.textContent = `+${xpGained} XP`;
   endKills.textContent = String(state.stats.kills || 0);
   endChain.textContent = `${state.stats.maxChain || 0}×`;
@@ -762,6 +794,12 @@ btnSandy.addEventListener('click', () => {
 });
 
 // Top HUD buttons
+if (hubLink) {
+  hubLink.addEventListener('click', () => {
+    checkpointNow();
+  });
+}
+
 btnMute.addEventListener('click', () => {
   unlockAudio();
   applyMute(!muted, true);

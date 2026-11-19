@@ -314,3 +314,56 @@ test('tier names map correctly', () => {
   assert.equal(E.tierName(6), 'Arasaka Mikoshi');
   assert.equal(E.tierName(9), 'Blackwall Deep Net 9');
 });
+
+test('xp formula normalized to floor(finalScore / 35) + tier * 8', () => {
+  const p = mk(11, 2);
+  const s = E.createBreach(p, { tier: 2, streak: 1 });
+  for (const { r, c } of p.solutionPath) E.pick(s, r, c);
+  assert.equal(s.result.xp, Math.floor(s.result.score / 35) + 2 * 8);
+});
+
+test('shop time upgrades cap at +15s (3 purchases) and total timeLimit caps at 60s', () => {
+  const run = E.createRun({ seed: 9 });
+  run.eddies = 10000;
+  assert.equal(E.buy(run, 'time').ok, true);
+  assert.equal(E.buy(run, 'time').ok, true);
+  assert.equal(E.buy(run, 'time').ok, true);
+  assert.equal(run.timeBonus, 15);
+  assert.equal(E.buy(run, 'time').reason, 'max');
+  run.carryTime = 30;
+  const s = E.startBreach(run);
+  assert.equal(s.timeLimit, 60);
+});
+
+test('hint fallback targets highest-value single solvable daemon when full sweep is broken', () => {
+  // grid[r][c] = TOKENS[(r + c) % 6]: row 0 is [1C, 55, BD, E9, 7A]
+  // pick (0,0)=1C -> col 0 has (1,0)=55, (2,0)=BD, (3,0)=E9, (4,0)=7A
+  const s = manual([
+    { id: 'broken', type: 'DATAMINE_V1', seq: ['FF', 'FF', 'FF'] },
+    { id: 'low', type: 'DATAMINE_V1', seq: ['1C', '55'] },
+    { id: 'high', type: 'BLACKWALL_SIPHON', seq: ['1C', 'E9'] },
+  ], 2);
+  E.pick(s, 0, 0); // buffer=['1C'], 1 slot left -> 'broken' is locked, 'low' needs '55' at (1,0), 'high' needs 'E9' at (3,0)
+  const cell = E.nextHintCell(s);
+  assert.deepEqual(cell, { r: 3, c: 0 });
+});
+
+test('victory condition: clearing 5+ tiers marks run.won = true even if later breach fails', () => {
+  const run = E.createRun({ seed: 21 });
+  for (let i = 0; i < 5; i++) {
+    const s = E.startBreach(run);
+    for (const { r, c } of s.puzzle.solutionPath) {
+      if (s.status === 'done') break;
+      E.pick(s, r, c);
+    }
+    E.applyBreach(run, s);
+  }
+  assert.equal(run.cleared, 5);
+  assert.equal(run.won, true);
+  const failState = manual([{ id: 'x', type: 'DATAMINE_V1', seq: ['FF', 'FF'] }], 2);
+  E.pick(failState, 0, 0);
+  E.pick(failState, 1, 0);
+  E.applyBreach(run, failState);
+  assert.equal(run.status, 'over');
+  assert.equal(run.won, true);
+});

@@ -14,6 +14,7 @@ function defender(c, w, h, t, s) {
     let L = 0; s.seg = s.path.slice(1).map((p, i) => { const a = s.path[i]; const l = Math.hypot(p[0] - a[0], p[1] - a[1]); L += l; return l; }); s.len = L;
   }
   const dt = s.dt;
+  const glow = s.lowFps ? 0 : 1;
   c.fillStyle = '#05070b'; c.fillRect(0, 0, w, h);
   // rack grid
   c.strokeStyle = 'rgba(252,238,9,.06)'; c.lineWidth = 1;
@@ -28,7 +29,7 @@ function defender(c, w, h, t, s) {
   const posAt = (d) => { for (let i = 0; i < s.seg.length; i++) { if (d <= s.seg[i]) { const a = s.path[i], b = s.path[i + 1], k = d / s.seg[i]; return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; } d -= s.seg[i]; } return s.path[s.path.length - 1]; };
   for (const e of s.enemies) { e.d += dt * w * .12; [e.x, e.y] = posAt(e.d); }
   s.enemies = s.enemies.filter((e) => e.d < s.len && e.hp > 0);
-  for (const e of s.enemies) { c.fillStyle = e.hue; c.shadowColor = e.hue; c.shadowBlur = 8; c.fillRect(e.x - 4, e.y - 4, 8, 8); }
+  for (const e of s.enemies) { c.fillStyle = e.hue; c.shadowColor = e.hue; c.shadowBlur = 8 * glow; c.fillRect(e.x - 4, e.y - 4, 8, 8); }
   c.shadowBlur = 0;
   // turrets
   for (const tu of s.turrets) {
@@ -38,7 +39,7 @@ function defender(c, w, h, t, s) {
     c.fillStyle = '#161926'; c.strokeStyle = '#fcee09'; c.lineWidth = 1.5;
     c.beginPath(); c.moveTo(tu.x, tu.y - 8); c.lineTo(tu.x + 7, tu.y + 5); c.lineTo(tu.x - 7, tu.y + 5); c.closePath(); c.fill(); c.stroke();
   }
-  for (const b of s.beams) { b.life -= dt; c.strokeStyle = hexA('#fcee09', Math.max(0, b.life / .15)); c.lineWidth = 2; c.shadowColor = '#fcee09'; c.shadowBlur = 10; c.beginPath(); c.moveTo(b.x1, b.y1); c.lineTo(b.x2, b.y2); c.stroke(); }
+  for (const b of s.beams) { b.life -= dt; c.strokeStyle = hexA('#fcee09', Math.max(0, b.life / .15)); c.lineWidth = 2; c.shadowColor = '#fcee09'; c.shadowBlur = 10 * glow; c.beginPath(); c.moveTo(b.x1, b.y1); c.lineTo(b.x2, b.y2); c.stroke(); }
   c.shadowBlur = 0; s.beams = s.beams.filter((b) => b.life > 0);
 }
 
@@ -47,6 +48,7 @@ function icebreaker(c, w, h, t, s) {
   if (!s.init) { s.init = true; s.foes = []; s.shots = []; s.cd = 0; }
   const phase = t % 6; const slow = phase > 4.2 && phase < 5.6;
   const dt = s.dt * (slow ? .2 : 1);
+  const glow = s.lowFps ? 0 : 1;
   c.fillStyle = slow ? 'rgba(10,20,40,.35)' : 'rgba(5,7,11,.55)'; c.fillRect(0, 0, w, h);
   const px = w / 2 + Math.cos(t * .7) * w * .12, py = h / 2 + Math.sin(t * 1.1) * h * .14;
   if (s.foes.length < 60 && Math.random() < .5) { const a = rand(0, TAU), r = Math.max(w, h) * .62; s.foes.push({ x: w / 2 + Math.cos(a) * r, y: h / 2 + Math.sin(a) * r, v: rand(18, 34) }); }
@@ -63,7 +65,7 @@ function icebreaker(c, w, h, t, s) {
   s.shots = s.shots.filter((sh) => sh.l > 0);
   c.fillStyle = '#ff003c'; for (const f of s.foes) { c.beginPath(); c.arc(f.x, f.y, 3.5, 0, TAU); c.fill(); }
   c.fillStyle = '#fcee09'; for (const sh of s.shots) c.fillRect(sh.x - 1.5, sh.y - 1.5, 3, 3);
-  c.shadowColor = '#00f0ff'; c.shadowBlur = 12; c.fillStyle = '#00f0ff';
+  c.shadowColor = '#00f0ff'; c.shadowBlur = 12 * glow; c.fillStyle = '#00f0ff';
   for (const [bx, by] of blades) { c.beginPath(); c.arc(bx, by, 3, 0, TAU); c.fill(); }
   c.beginPath(); c.arc(px, py, 6, 0, TAU); c.fill();
   if (slow) {
@@ -81,6 +83,7 @@ function blackwall(c, w, h, t, s) {
     s.city = []; let x = 0; while (x < w) { const bw = rand(10, 26); s.city.push([x, bw, rand(h * .08, h * .26)]); x += bw + 2; }
   }
   const dt = s.dt; const ground = h * .92;
+  const glow = s.lowFps ? 0 : 1;
   c.fillStyle = 'rgba(6,4,10,.5)'; c.fillRect(0, 0, w, h);
   s.cd -= dt; if (s.cd <= 0) { s.cd = rand(.25, .6); const sx = rand(0, w); s.m.push({ sx, sy: -5, x: sx, y: -5, tx: rand(w * .1, w * .9), v: rand(30, 50) }); }
   for (const m of s.m) { const a = Math.atan2(ground - m.sy, m.tx - m.sx); m.x += Math.cos(a) * m.v * dt; m.y += Math.sin(a) * m.v * dt; }
@@ -101,7 +104,7 @@ function blackwall(c, w, h, t, s) {
   c.lineWidth = 1.2;
   for (const m of s.m) { c.strokeStyle = 'rgba(255,0,60,.55)'; c.beginPath(); c.moveTo(m.sx, m.sy); c.lineTo(m.x, m.y); c.stroke(); c.fillStyle = '#fff'; c.fillRect(m.x - 1.5, m.y - 1.5, 3, 3); }
   for (const i of s.ints) { const x = i.x + (i.tx - i.x) * i.p, y = i.y + (i.ty - i.y) * i.p; c.strokeStyle = 'rgba(0,240,255,.7)'; c.beginPath(); c.moveTo(i.x, i.y); c.lineTo(x, y); c.stroke(); }
-  for (const b of s.booms) { c.fillStyle = hexA(b.bad ? '#ff2a55' : '#fcee09', b.l * .5); c.shadowColor = b.bad ? '#ff2a55' : '#fcee09'; c.shadowBlur = 16; c.beginPath(); c.arc(b.x, b.y, b.r, 0, TAU); c.fill(); }
+  for (const b of s.booms) { c.fillStyle = hexA(b.bad ? '#ff2a55' : '#fcee09', b.l * .5); c.shadowColor = b.bad ? '#ff2a55' : '#fcee09'; c.shadowBlur = 16 * glow; c.beginPath(); c.arc(b.x, b.y, b.r, 0, TAU); c.fill(); }
   c.shadowBlur = 0;
 }
 
@@ -109,6 +112,7 @@ function blackwall(c, w, h, t, s) {
 function neonvector(c, w, h, t, s) {
   if (!s.init) { s.init = true; s.b = []; s.shots = []; s.stars = Array.from({ length: 40 }, () => [rand(0, w), rand(0, h), rand(.3, 1)]); }
   const dt = s.dt;
+  const glow = s.lowFps ? 0 : 1;
   const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#12051f'); g.addColorStop(1, '#05030a');
   c.fillStyle = g; c.fillRect(0, 0, w, h);
   for (const st of s.stars) { st[1] = (st[1] + dt * 80 * st[2]) % h; c.fillStyle = hexA('#d946ef', st[2] * .7); c.fillRect(st[0], st[1], 1.5, st[2] * 6); }
@@ -117,12 +121,12 @@ function neonvector(c, w, h, t, s) {
   const off = (t * 40) % 20; for (let y = -20 + off; y < h; y += 20) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
   // boss emitter
   const bx = w / 2 + Math.sin(t * .8) * w * .25, by = h * .18;
-  c.fillStyle = '#ff003c'; c.shadowColor = '#ff003c'; c.shadowBlur = 14;
+  c.fillStyle = '#ff003c'; c.shadowColor = '#ff003c'; c.shadowBlur = 14 * glow;
   c.beginPath(); c.moveTo(bx, by + 10); c.lineTo(bx + 16, by - 6); c.lineTo(bx - 16, by - 6); c.closePath(); c.fill();
   if (Math.floor(t * 10) !== s.lastEmit) { s.lastEmit = Math.floor(t * 10); for (let k = 0; k < 6; k++) { const a = t * 1.7 + k * TAU / 6; s.b.push({ x: bx, y: by, vx: Math.cos(a) * 55, vy: Math.sin(a) * 55 + 20 }); } }
   for (const b of s.b) { b.x += b.vx * dt; b.y += b.vy * dt; }
   s.b = s.b.filter((b) => b.x > -5 && b.x < w + 5 && b.y > -5 && b.y < h + 5);
-  c.shadowColor = '#d946ef'; c.shadowBlur = 8; c.fillStyle = '#f0abfc';
+  c.shadowColor = '#d946ef'; c.shadowBlur = 8 * glow; c.fillStyle = '#f0abfc';
   for (const b of s.b) { c.beginPath(); c.arc(b.x, b.y, 2.4, 0, TAU); c.fill(); }
   // ship
   const sx = w / 2 + Math.sin(t * 1.3) * w * .3, sy = h * .8 + Math.sin(t * 2.1) * h * .05;
@@ -146,15 +150,19 @@ function protocol(c, w, h, t, s) {
     s.used = new Set(); s.seq = []; s.pos = 0; s.axis = 'row'; s.line = 0; s.step = 0;
   }
   const n = s.n;
+  const glow = s.lowFps ? 0 : 1;
   c.fillStyle = '#04080a'; c.fillRect(0, 0, w, h);
   const cell = Math.min((w * .58) / n, (h * .82) / n), gx = w * .06, gy = (h - cell * n) / 2;
   // advance every 0.7s
   const step = Math.floor(t / .7);
   if (step !== s.step) {
     s.step = step;
-    const cand = [];
+    let cand = [];
     for (let i = 0; i < n; i++) { const idx = s.axis === 'row' ? s.line * n + i : i * n + s.line; if (!s.used.has(idx)) cand.push(idx); }
-    if (!cand.length || s.seq.length >= 6) { s.init = false; return; }
+    if (!cand.length || s.seq.length >= 6) {
+      s.used.clear(); s.seq = []; s.pos = 0; s.axis = 'row'; s.line = 0;
+      cand = Array.from({ length: n }, (_, i) => i);
+    }
     const pick = cand[Math.floor(Math.random() * cand.length)];
     s.used.add(pick); s.seq.push(s.grid[pick]);
     s.axis = s.axis === 'row' ? 'col' : 'row'; s.line = s.axis === 'row' ? Math.floor(pick / n) : pick % n; s.pos = pick;
@@ -171,7 +179,7 @@ function protocol(c, w, h, t, s) {
   }
   // cursor
   const cx = gx + (s.pos % n) * cell, cy = gy + Math.floor(s.pos / n) * cell;
-  c.strokeStyle = '#00ff9f'; c.shadowColor = '#00ff9f'; c.shadowBlur = 10; c.lineWidth = 1.5;
+  c.strokeStyle = '#00ff9f'; c.shadowColor = '#00ff9f'; c.shadowBlur = 10 * glow; c.lineWidth = 1.5;
   c.strokeRect(cx + 2, cy + 2, cell - 4, cell - 4); c.shadowBlur = 0;
   // buffer
   const bx = gx + cell * n + w * .05, bw = w - bx - w * .05;
@@ -206,6 +214,7 @@ function overclock(c, w, h, t, s) {
     s.px = w * .5; s.sparks = []; s.lasers = []; s.rings = []; s.lcd = .8;
   }
   const dt = s.dt;
+  const glow = s.lowFps ? 0 : 1;
   c.fillStyle = 'rgba(6,7,13,.65)'; c.fillRect(0, 0, w, h);
   c.strokeStyle = 'rgba(255,170,0,.06)'; c.lineWidth = 1;
   for (let x = 0; x < w; x += 20) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
@@ -277,7 +286,7 @@ function overclock(c, w, h, t, s) {
     }
   }
   // Lasers
-  c.fillStyle = '#00f0ff'; c.shadowColor = '#00f0ff'; c.shadowBlur = 8;
+  c.fillStyle = '#00f0ff'; c.shadowColor = '#00f0ff'; c.shadowBlur = 8 * glow;
   for (const lz of s.lasers) c.fillRect(lz.x - 1, lz.y - 6, 2, 10);
   // Shockwaves + sparks
   for (const r of s.rings) { r.r += dt * 110; r.l -= dt; c.strokeStyle = hexA('#fcee09', Math.max(0, r.l * 2.2)); c.lineWidth = 1.5; c.beginPath(); c.arc(r.x, r.y, r.r, 0, TAU); c.stroke(); }
@@ -289,10 +298,10 @@ function overclock(c, w, h, t, s) {
     const [tx, ty] = b.trail[i]; const k = (i + 1) / b.trail.length;
     c.fillStyle = hexA('#ffaa00', k * .45); c.beginPath(); c.arc(tx, ty, 3.6 * k, 0, TAU); c.fill();
   }
-  c.shadowColor = '#fcee09'; c.shadowBlur = 14; c.fillStyle = '#fff5b8';
+  c.shadowColor = '#fcee09'; c.shadowBlur = 14 * glow; c.fillStyle = '#fff5b8';
   c.beginPath(); c.arc(b.x, b.y, 4.2, 0, TAU); c.fill();
   // Cyber paddle
-  c.shadowColor = '#ffaa00'; c.shadowBlur = 12; c.fillStyle = '#ffaa00';
+  c.shadowColor = '#ffaa00'; c.shadowBlur = 12 * glow; c.fillStyle = '#ffaa00';
   c.fillRect(s.px - pw / 2, py, pw, 6);
   c.fillStyle = '#00f0ff'; c.fillRect(s.px - pw * .25, py + 1.5, pw * .5, 3);
   c.shadowBlur = 0;
@@ -312,6 +321,7 @@ function lightcycle(c, w, h, t, s) {
     s.sparks = [];
   }
   const dt = s.dt;
+  const glow = s.lowFps ? 0 : 1;
   c.fillStyle = '#04070e'; c.fillRect(0, 0, w, h);
   // Dark neon arena grid
   c.strokeStyle = 'rgba(0,229,255,.1)'; c.lineWidth = 1;
@@ -356,7 +366,7 @@ function lightcycle(c, w, h, t, s) {
     const isPlayer = idx === 0;
     c.strokeStyle = hexA(bk.color, isPlayer && cloak ? .45 : .9);
     c.shadowColor = bk.color;
-    c.shadowBlur = isPlayer && cloak ? 16 : 10;
+    c.shadowBlur = (isPlayer && cloak ? 16 : 10) * glow;
     c.lineWidth = isPlayer ? 3 : 2.2;
     c.beginPath();
     bk.pts.forEach(([px, py], i) => (i ? c.lineTo(px, py) : c.moveTo(px, py)));
@@ -393,26 +403,54 @@ export function startPreviews(canvases) {
   };
   const io = 'IntersectionObserver' in globalThis ? new IntersectionObserver((es) => es.forEach((e) => { const it = items.find((i) => i.cv === e.target); if (it) it.visible = e.isIntersecting; })) : null;
   items.forEach((it) => io && io.observe(it.cv));
-  let last = performance.now(), raf = 0;
+  let last = performance.now(), raf = 0, avgDt = 0.016, stopped = false;
   const tick = (now) => {
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    raf = 0;
+    if (stopped) return;
+    const rawDt = Math.max(0, (now - last) / 1000);
+    avgDt = avgDt * 0.9 + Math.min(0.1, rawDt) * 0.1;
+    const lowFps = avgDt > 0.025;
+    const dt = Math.min(0.05, rawDt); last = now;
     const t = now / 1000;
     for (const it of items) {
-      if (!it.visible || !it.scene || !it.w) continue;
+      if (!it.visible || !it.scene || !it.w || it.cv.closest('[hidden]')) continue;
       it.state.dt = dt;
+      it.state.lowFps = lowFps;
       it.ctx.save();
       try { it.scene(it.ctx, it.w, it.h, t, it.state); } catch (e) { it.state = {}; }
       it.ctx.restore();
     }
-    if (!reduce) raf = requestAnimationFrame(tick);
+    if (!reduce && !stopped && !document.hidden) raf = requestAnimationFrame(tick);
   };
   sizeAll();
   if (reduce) {
     // Render a settled still frame: simulate ~3s once.
     for (let i = 0; i < 90; i++) { const now = 1000 + i * 33; for (const it of items) if (it.scene && it.w) { it.state.dt = 0.033; it.ctx.save(); it.scene(it.ctx, it.w, it.h, now / 1000, it.state); it.ctx.restore(); } }
-  } else raf = requestAnimationFrame(tick);
+  } else if (!document.hidden) {
+    raf = requestAnimationFrame(tick);
+  }
   let rt = 0;
-  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { sizeAll(); if (reduce) tick(performance.now()); }, 150); });
-  document.addEventListener('visibilitychange', () => { if (reduce) return; if (document.hidden) cancelAnimationFrame(raf); else { last = performance.now(); raf = requestAnimationFrame(tick); } });
-  return { resize: sizeAll };
+  const onResize = () => { clearTimeout(rt); rt = setTimeout(() => { if (stopped) return; sizeAll(); if (reduce) tick(performance.now()); }, 150); };
+  const onVisibilityChange = () => {
+    if (reduce || stopped) return;
+    if (document.hidden) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    } else if (!document.hidden && !raf) {
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    }
+  };
+  addEventListener('resize', onResize);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  const stop = () => {
+    stopped = true;
+    cancelAnimationFrame(raf);
+    raf = 0;
+    clearTimeout(rt);
+    if (io) io.disconnect();
+    removeEventListener('resize', onResize);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  };
+  return { resize: sizeAll, stop };
 }
