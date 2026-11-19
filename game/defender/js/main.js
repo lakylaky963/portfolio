@@ -56,7 +56,6 @@ function setLang(l, syncHub = true) {
   if (syncHub) hub(HubSDK.setLang, l);
   applyLang(l);
   $('b-lang').textContent = t('lang');
-  $('back-portfolio').href = l === 'he' ? '/portfolio/he/' : '/portfolio/';
   buildPalette(); buildMaps(); buildBadgeList($('badge-list'), []); refreshStatic(); refreshResumeBtn(); lastSel = ''; lastHud = {};
   if (!$('end').hidden && game) renderEndModal(lastEndFresh);
 }
@@ -650,7 +649,6 @@ const hubMuted = hub(HubSDK.getMuted);
 Audio.setMuted(typeof hubMuted === 'boolean' ? hubMuted : store.get('hd.mute', false));
 applyLang(chrome.lang === 'he' || chrome.lang === 'en' ? (new URLSearchParams(location.search).get('lang') || chrome.lang) : initialLang());
 $('b-lang').textContent = t('lang');
-$('back-portfolio').href = getLang() === 'he' ? '/portfolio/he/' : '/portfolio/';
 buildPalette(); refreshStatic();
 committed = true;
 openMenu();
